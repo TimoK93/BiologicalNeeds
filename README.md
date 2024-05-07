@@ -4,7 +4,7 @@
 <h2 align="center">Strong Mitosis-aware Random-finite Sets Tracker with Aleatoric Uncertainty</h2>
 
 <p align="center">
-  <img alt="Fluo-N2DH-SIM+" src="./assets/teaser.png">
+  <img alt="Teaser Image" src="./assets/teaser.png">
   <br>
     <em>The output distribution of EmbedTrack using different input transformations on BF-C2DL-HSC.</em>
 </p>
