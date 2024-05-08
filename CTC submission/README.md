@@ -43,7 +43,7 @@ pyinstaller --onefile --clean \
 --hidden-import="imagecodecs._shared" \
 --hidden-import="imagecodecs._imcd" \
 --hidden-import="imagecodecs._lzw" \
-./mht/postprocess.py
+./mht/postprocessing.py
 ```
 
 ```bash

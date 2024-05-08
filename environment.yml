@@ -1,4 +1,4 @@
-name: venv_embedtrack
+name: biological_needs
 channels:
   - pytorch
   - nvidia
@@ -177,7 +177,6 @@ dependencies:
     - cffi==1.15.1
     - contourpy==1.0.5
     - cryptography==38.0.4
-    - ctc-metrics==0.1.0
     - idna==3.4
     - imagecodecs==2023.9.18
     - imageio==2.25.0
@@ -224,5 +223,5 @@ dependencies:
     - tqdm==4.64.1
     - typing-extensions==4.4.0
     - urllib3==1.26.14
-prefix: /home/kaiser/anaconda3/tmp/envs/venv_embedtrack
+prefix: /home/kaiser/anaconda3/tmp/envs/biological_needs
 

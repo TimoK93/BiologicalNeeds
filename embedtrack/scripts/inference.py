@@ -10,7 +10,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Inference on a single dataset.')
 parser.add_argument('--dataset', required=True, help='Dataset name')
-parser.add_argument('--res-path', default=None, help='Result directory')
+parser.add_argument('--res-path', default="results/embedtrack", help='Result directory')
 parser.add_argument('--model-name', default="normal", help='Dataset name')
 parser.add_argument('--train', action='store_true')
 parser.add_argument('--challenge', action='store_true')

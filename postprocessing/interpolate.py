@@ -287,7 +287,7 @@ if __name__ == "__main__":
         help="train or challenge, if None both are evaluated"
     )
     parser.add_argument(
-        '--challenge', default=None,
+        '--dataset', default=None,
         help="CTC-Challenge, if None all are evaluated"
     )
     parser.add_argument(

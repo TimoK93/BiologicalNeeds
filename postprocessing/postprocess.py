@@ -1,10 +1,7 @@
 import os
-from os.path import exists
 import numpy as np
 import argparse
 import tifffile
-from multiprocessing import Pool, cpu_count
-from scipy.optimize import linear_sum_assignment
 import re
 import pandas as pd
 from pathlib import Path
@@ -394,7 +391,7 @@ if __name__ == "__main__":
         help="train or challenge, if None both are evaluated"
     )
     parser.add_argument(
-        '--challenge', default=None,
+        '--dataset', default=None,
         help="CTC-Challenge, if None all are evaluated"
     )
     parser.add_argument(
