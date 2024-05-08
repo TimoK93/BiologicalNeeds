@@ -100,22 +100,22 @@ if __name__ == "__main__":
     (data_path / "challenge").mkdir(exist_ok=True)
 
     if args.train:
-        for data_set in args.data_sets:
-            print(f"Downloading data set {data_set} ...")
+        for dataset in args.datasets:
+            print(f"Downloading data set {dataset} ...")
             # Download training data set
-            if not os.path.exists(data_path / "train" / data_set):
-                dp = os.path.join(data_path, "train", data_set)
+            if not os.path.exists(data_path / "train" / dataset):
+                dp = os.path.join(data_path, "train", dataset)
                 print(f"Downloading training data set to {dp} ...")
-                data_url = training_data_url + data_set + ".zip"
+                data_url = training_data_url + dataset + ".zip"
                 retrieve_ctc_data(data_url, os.path.join(data_path, "train"))
 
     if args.challenge:
-        for data_set in args.data_sets:
+        for dataset in args.datasets:
             # Download challenge data set
-            if not os.path.exists(data_path / "challenge" / data_set):
-                dp = os.path.join(data_path, "challenge", data_set)
+            if not os.path.exists(data_path / "challenge" / dataset):
+                dp = os.path.join(data_path, "challenge", dataset)
                 print(f"Downloading challenge data set {dp} ...")
-                data_url = challenge_data_url + data_set + ".zip"
+                data_url = challenge_data_url + dataset + ".zip"
                 retrieve_ctc_data(data_url, os.path.join(data_path, "challenge"))
 
 
