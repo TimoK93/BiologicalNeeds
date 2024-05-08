@@ -60,7 +60,7 @@ def process(
         "PhC-C2DH-U373",
     ]
 
-    assert shifts in ["all", "none"] or shifts.isdigit()
+    assert shifts in ["all", "none"] or isinstance(shifts, int)
     if shifts == "all":
         SHIFTS = [0, 1, 2, 4, 8]
     elif shifts == "none":
