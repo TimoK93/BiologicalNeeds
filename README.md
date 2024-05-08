@@ -257,8 +257,8 @@ folder, such that no additional `--destination-root` argument is needed.
 We participated as team ctc741 on the *ISBI 24 Cell Tracking Challenge 
 (Linking Only)*. Precompiled executables of our submission alongside with the 
 pretrained models can be found [here](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/CTC741_Submission_ISBI24.zip).
-If you want to create the executables yourself, please read the instructions in 
-the [instruction file](CTC Submission\README.txt) in the *CTC Submission* 
+For further information, please read the instructions in 
+the ReadMe in the *CTC Submission* 
 directory.
 
 
