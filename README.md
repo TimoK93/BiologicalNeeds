@@ -45,7 +45,7 @@ retrieving the CTC data sets and inference.
 ## Dependencies 
 We have tested this implementation using `pytorch` version 1.13 and `cudatoolkit` version 11.7 on a `linux` OS machine. 
 
-To create the environment `venv_embedtrack` please run
+To create the environment `biological_needs` please run
 ```
 conda env create -f environment.yml
 ```

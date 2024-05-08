@@ -220,15 +220,15 @@ def postprocess_all(
         data_root,
         dest_root,
         subset=None,
-        challenge=None,
+        dataset=None,
         sequence=None,
 ):
     for _subset in ["train", "challenge"]:
         if subset != _subset and subset is not None:
             continue
-        challenges = os.listdir(os.path.join(data_root, _subset))
-        for _challenge in challenges:
-            if challenge != _challenge and challenge is not None:
+        datasets = os.listdir(os.path.join(data_root, _subset))
+        for _dataset in datasets:
+            if dataset != _dataset and dataset is not None:
                 continue
             #if _challenge == "BF-C2DL-HSC":
             #    continue
@@ -236,14 +236,14 @@ def postprocess_all(
                 if sequence != _sequence and sequence is not None:
                     continue
                 if not os.path.exists(os.path.join(
-                        data_root, _subset, _challenge, _sequence+"_RES")
+                        data_root, _subset, _dataset, _sequence+"_RES")
                 ):
                     continue
-                print(f"Interpolate {_subset} {_challenge} {_sequence}")
+                print(f"Interpolate {_subset} {_dataset} {_sequence}")
                 postprocess_sequence(
                     data_root=os.path.join(data_root, _subset),
                     dest_root=os.path.join(dest_root, _subset),
-                    dataset_name=_challenge,
+                    dataset_name=_dataset,
                     sequence_name=_sequence,
                 )
 
@@ -313,6 +313,6 @@ if __name__ == "__main__":
             data_root=args.data_root,
             dest_root=args.destination_root,
             subset=args.subset,
-            challenge=args.challenge,
+            dataset=args.dataset,
             sequence=args.sequence,
         )
