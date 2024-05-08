@@ -43,7 +43,9 @@ retrieving the CTC data sets and inference.
 
 
 ## Dependencies 
-We have tested this implementation using `pytorch` version 1.13 and `cudatoolkit` version 11.7 on a `linux` OS machine. 
+We have tested this implementation using `pytorch` version 1.13 and 
+`cudatoolkit` version 11.7 on a `linux` OS machine with Python 3.10 installed.
+All required packages are located in the *environment.yml* file.
 
 To create the environment `biological_needs` please run
 ```
