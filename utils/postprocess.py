@@ -372,7 +372,7 @@ def postprocess_sequence(
         foi_correction(res_dir, dataset_name)
         fill_empty_frames(res_dir)
     except Exception as e:
-       print("WARNING: There was an error in postprocessing sequence", res_dir)
+       print("WARNING: There was an error in utils sequence", res_dir)
        print(e)
 
 

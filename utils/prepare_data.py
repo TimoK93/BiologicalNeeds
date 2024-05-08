@@ -35,13 +35,13 @@ def get_arguments():
     """
     parser = argparse.ArgumentParser(description="Download CTC data sets")
     parser.add_argument(
-        "--data_path",
+        "--data-path",
         type=str,
         default="",
         help="Path to the directory where the data sets will be stored",
     )
     parser.add_argument(
-        "--data_sets",
+        "--datasets",
         type=str,
         nargs="+",
         default=valid_sets,
@@ -72,7 +72,7 @@ def get_arguments():
         args.challenge = True
 
     if args.data_path == "":
-        args.data_path = os.path.join(os.path.dirname(__file__), "Data")
+        args.data_path = os.path.dirname(__file__).replace("utils", "Data")
 
     return args
 

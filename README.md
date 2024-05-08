@@ -68,12 +68,12 @@ All datasets can be retrieved [here](http://celltrackingchallenge.net/2d-dataset
 *prepare_data.py* script to prepare the data for training and testing. 
 You can run the script with the following command:
 ```bash
-python prepare_data.py
+python utils/prepare_data.py
 ```
 If you want to prepare the data for a specific dataset, use the command:
 ```bash
-python prepare_data.py --dataset=BF-C2DL-HSC --challenge
-python prepare_data.py --datase=DIC-C2DH-HeLa --train
+python utils/prepare_data.py --datasets=BF-C2DL-HSC --challenge
+python utils/prepare_data.py --datasets=DIC-C2DH-HeLa --train
 ```
 
 After that you should have a similar structure in the *Data* folder as follows:
@@ -128,7 +128,7 @@ using the training scripts from the **[EmbedTrack](https://git.scc.kit.edu/kit-l
 
 Our method is applied in two steps and postprocessing routines:
 
-1. **EmbedTrack and advanced Test-Time-Augmentation** is used to generate association distributions and cell masks.
+1. **EmbedTrack and Advanced Test-Time Augmentation** is used to generate association distributions and cell masks.
 2. **Multi Hypothesis Tracking** is applied to the association distributions to generate the final tracking results.
 3. **Interpolation** is used to fill missing masks in the tracking results.
 4. **Postprocessing** is applied to satisfy the CTC requirements (e.g. no masks at image borders).
@@ -140,7 +140,7 @@ the association distributions.
 
 The four inference routines are described next.
 
-#### 1. EmbedTrack and advanced test-time-augmentation
+#### 1. EmbedTrack and Advanced Test-Time Augmentation
 
 First, run the extended EmbedTrack framework to generate the association 
 distributions and cell masks. Change hyperparameters according to your needs and
