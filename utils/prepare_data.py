@@ -60,12 +60,12 @@ def get_arguments():
 
     args = parser.parse_args()
 
-    if "all" in args.data_sets:
-        args.data_sets = valid_sets
+    if "all" in args.datasets:
+        args.datasets = valid_sets
 
-    for data_set in args.data_sets:
-        if data_set not in valid_sets:
-            raise ValueError(f"Unknown data set {data_set}")
+    for dataset in args.datasets:
+        if dataset not in valid_sets:
+            raise ValueError(f"Unknown data set {dataset}")
 
     if not args.train and not args.challenge:
         args.train = True
