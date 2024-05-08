@@ -34,19 +34,20 @@ def process(
 ):
     FILE_PATH = Path(__file__)
     PROJECT_PATH = os.path.join(*FILE_PATH.parts[:-4])
+    CWD = os.getcwd()
     print(PROJECT_PATH)
     if not train and not challenge:
         train = True
         challenge = True
     RAW_DATA_PATHS = []
     if train:
-        RAW_DATA_PATHS.append(os.path.join(PROJECT_PATH, "Data", "train"))
+        RAW_DATA_PATHS.append(os.path.join(CWD, "Data", "train"))
     if challenge:
-        RAW_DATA_PATHS.append(os.path.join(PROJECT_PATH, "Data", "challenge"))
+        RAW_DATA_PATHS.append(os.path.join(CWD, "Data", "challenge"))
 
     print(RAW_DATA_PATHS)
 
-    MODEL_PATH = os.path.join(PROJECT_PATH, "models")
+    MODEL_PATH = os.path.join(CWD, "models")
 
     DATA_SETS = [
         "Fluo-N2DH-SIM+",
@@ -137,7 +138,7 @@ def process(
 
                 model_dir = os.path.join(MODEL_PATH, data_set)
                 if not os.path.exists(model_dir):
-                    print(f"no trained model for data set {data_set}")
+                    print(f"no trained model for data set {data_set}, {model_dir}")
                     continue
 
                 # time stamps
