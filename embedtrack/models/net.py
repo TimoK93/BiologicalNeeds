@@ -2,6 +2,9 @@
 Author: Katharina Löffler (2022), Karlsruhe Institute of Technology
 Licensed under MIT License
 """
+"""
+Modified by Timo Kaiser
+"""
 import embedtrack.models.BranchedERFNet as BranchedERFNet
 import torch
 from torch import nn
@@ -61,21 +64,3 @@ class TrackERFNet(BranchedERFNet):
         segm_prediction_prev = segm_prediction[curr_frames.shape[0] :]
         tracking_prediction = self.decoders[-1].forward(features_stacked)
         return segm_prediction_curr, segm_prediction_prev, tracking_prediction
-
-    def init_output(self, n_sigma=1):
-        # init last layers for tracking and segmentation offset similar
-        with torch.no_grad():
-            for decoder in (self.decoders[0], self.decoders[-1]):
-                output_conv = decoder.output_conv
-                print("Initialize last layer with size: ", output_conv.weight.size())
-                print("*************************")
-                output_conv.weight[:, 0:2, :, :].fill_(0)
-                output_conv.bias[0:2].fill_(0)
-
-                output_conv.weight[:, 2 : 2 + n_sigma, :, :].fill_(0)
-                output_conv.bias[2 : 2 + n_sigma].fill_(1)
-
-
-
-def calc_model_size(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)

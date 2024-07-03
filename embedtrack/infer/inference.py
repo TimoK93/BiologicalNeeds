@@ -735,8 +735,9 @@ def infer_sequence(
         cluster,
         min_mask_size,
         shifts=[],
-        multiscale=True,
-        multisegmentation=True
+        multiscale=False,
+        multisegmentation=False,
+        refine_segmentation=False,
 ):
     """
     Infer a sequence of images and store the predicted instance segmentation and the tracking offsets.
@@ -1134,46 +1135,6 @@ def _clip_positions(estimated_position, img_shape):
     return estimated_position
 
 
-def remove_single_frame_tracks(tracking_dir):
-    """
-    Remove tracks of length 1 without any predecessor.
-    Args:
-        tracking_dir: string
-            path to the tracking directory
-    """
-    lineage = pd.read_csv(
-        os.path.join(tracking_dir, "res_track.txt"),
-        delimiter=" ",
-        header=None,
-        index_col=None,
-        names=["track_id", "t_start", "t_end", "predecessor_id"],
-    )
-    res_dir = tracking_dir + "_cleaned"
-    single_frame_tracks = lineage[
-        (lineage["t_start"] == lineage["t_end"]) & (lineage["predecessor_id"] == 0)
-    ]
-    single_frame_tracks = single_frame_tracks[
-        ~np.isin(single_frame_tracks["track_id"], lineage["predecessor_id"])
-    ]
-    tracks_by_time = single_frame_tracks.groupby("t_start", group_keys=True)
-    if not os.path.exists(res_dir):
-        os.makedirs(res_dir)
-    for file in os.listdir(tracking_dir):
-        if not file.endswith("tif"):
-            continue
-        image = tifffile.imread(os.path.join(tracking_dir, file))
-        time_point = int(re.findall("\d+", file)[0])
-        if time_point in tracks_by_time.groups:
-            tracks_to_remove = tracks_by_time.get_group(time_point)
-            for track_id in tracks_to_remove["track_id"].values:
-                image[image == track_id] = 0
-        tifffile.imsave(os.path.join(res_dir, file), image.astype(np.uint16))
-    lineage = lineage.drop(index=single_frame_tracks.index)
-    lineage.to_csv(
-        os.path.join(res_dir, "res_track.txt"), sep=" ", index=False, header=False
-    )
-
-
 # for inference different grid (larger grid needed but the offsets where
 # learned for original grid -> extend the grid while keeping the scalars
 # of the original grid size and pixel size
@@ -1386,15 +1347,6 @@ def edit_tracks_with_missing_masks(tracking_dir):
                     "t_e": t_end,
                     "pred": tracklet_parent,
                 }])], ignore_index=True)
-            # lineage_data = lineage_data.append(
-            #     {
-            #         "m_id": max_track_id,
-            #         "t_s": t_start,
-            #         "t_e": t_end,
-            #         "pred": tracklet_parent,
-            #     },
-            #     ignore_index=True,
-            # )
             tracklet_parent = max_track_id
 
     lineage_data.to_csv(

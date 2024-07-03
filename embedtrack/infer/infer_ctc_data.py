@@ -30,8 +30,14 @@ import torch
 
 
 def inference(
-        raw_data_path, model_path, config_file, batch_size=32, shifts=[],
-        multiscale=False, multisegmentation=False
+        raw_data_path,
+        model_path,
+        config_file,
+        batch_size=32,
+        shifts=[],
+        multiscale=False,
+        multisegmentation=False,
+        refine_segmentation=False,
 ):
     """
     Segment and track a ctc dataset using a trained EmbedTrack model.
@@ -50,6 +56,8 @@ def inference(
             whether to use multiscale inference
         multisegmentation: bool
             whether to use multisegmentation
+        refine_segmentation: bool
+            whether to use segmentation refinement
     """
     raw_data_path = Path(raw_data_path)
     model_path = Path(model_path)
@@ -144,6 +152,7 @@ def inference(
         shifts=shifts,
         multiscale=multiscale,
         multisegmentation=multisegmentation,
+        refine_segmentation=refine_segmentation,
     )
     # foi_correction(tracking_dir, data_set) todo: reactivate for standard
     # fill_empty_frames(tracking_dir) todo: reactivate for standard
