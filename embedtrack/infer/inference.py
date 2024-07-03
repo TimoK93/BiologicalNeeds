@@ -781,27 +781,6 @@ def infer_sequence(
         img_file_t_curr = img_files[t_curr_frame]
         img_file_t_prev = img_files[time_points[i + 1]]
 
-        # ### ### ###
-        # A Hack for the ISBI challenge that reads in the mask files and uses them as Output
-        if "/01/" in img_file_t_curr:
-            mask_file_t_curr = img_file_t_curr.replace("/01/", "/01_ERR_SEG/")
-        else:
-            mask_file_t_curr = img_file_t_curr.replace("/02/", "/02_ERR_SEG/")
-        mask_file_t_curr = os.path.join(
-            os.path.dirname(mask_file_t_curr),
-            "mask" + os.path.basename(mask_file_t_curr)[1:])
-        if "/01/" in img_file_t_prev:
-            mask_file_t_prev = img_file_t_prev.replace("/01/", "/01_ERR_SEG/")
-        else:
-            mask_file_t_prev = img_file_t_prev.replace("/02/", "/02_ERR_SEG/")
-        mask_file_t_prev = os.path.join(
-            os.path.dirname(mask_file_t_prev),
-            "mask" + os.path.basename(mask_file_t_prev)[1:])
-
-        err_mask_prev = tifffile.imread(mask_file_t_prev)
-        err_mask_curr = tifffile.imread(mask_file_t_curr)
-        # ### ### ###
-
         ret = infer_image(
             img_file_t_curr=img_file_t_curr,
             img_file_t_prev=img_file_t_prev,
@@ -913,27 +892,19 @@ def infer_sequence(
             cluster.pixel_x, seg_prev, seg_prev_std, None, None,
             None, seg_prev_c_side)
 
-        # ### ### ### ISBI HACK
-        # instances_prev_gpu = cluster_prediction(
-        #     cluster, seg_prev, min_mask_size)
-        # instances_prev_gpu, _, _, _, _, _ = prev_data.refine_mask(
-        #     instances_prev_gpu)
-        instances_prev_gpu = torch.from_numpy(
-            err_mask_prev.astype(int)).to(device).to(torch.int16)
-        # ### ### ###
+        instances_prev_gpu = cluster_prediction(
+            cluster, seg_prev, min_mask_size)
+        instances_prev_gpu, _, _, _, _, _ = prev_data.refine_mask(
+            instances_prev_gpu)
 
         instances_prev = instances_prev_gpu.detach().cpu().numpy()
 
         if i == 0:
-            # ### ### ### ISBI HACK
             # Last frame of the sequence
-            # instances_curr_gpu = cluster_prediction(
-            #     cluster, seg_curr, min_mask_size)
-            # instances_curr_gpu, _, _, _, _, _ = curr_data.refine_mask(
-            #     instances_curr_gpu)
-            instances_curr_gpu = torch.from_numpy(err_mask_curr.astype(int)).to(
-                device).to(torch.int16)
-            # ### ### ###
+            instances_curr_gpu = cluster_prediction(
+                cluster, seg_curr, min_mask_size)
+            instances_curr_gpu, _, _, _, _, _ = curr_data.refine_mask(
+                instances_curr_gpu)
 
             instances_curr = instances_curr_gpu.detach().cpu().numpy()
             mask_idx_curr = get_indices_pandas(instances_curr)

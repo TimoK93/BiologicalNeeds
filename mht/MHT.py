@@ -5,6 +5,7 @@ import pickle
 from typing import Union
 from multiprocessing import Pool, cpu_count
 from scipy.optimize import linear_sum_assignment
+from scipy.stats import gamma
 
 from mht.utils import Gaussians, \
     PoissonPointProcess as PPP, BernoulliMixture, MultiBernoulliMixture, \
@@ -666,7 +667,15 @@ class MHTTracker:
         # Apply threshold or let probabilities be 1
         if min_length_a0 is not None:
             probs_a0[0:min_length_a0] = 0
-            probs_a0[0:min_length_a0] = np.arange(min_length_a0) / min_length_a0
+            ### Linear Ramp
+            # probs_a0[0:min_length_a0] = np.arange(min_length_a0) / min_length_a0
+            ### Erlang distributed
+            mu, sigma = min_length_a0, min_length_a0
+            alpha = mu ** 2 / sigma ** 2
+            beta = mu / sigma ** 2
+            erl = gamma(a=alpha, scale=1 / beta)
+            probs_a0[0:min_length_a0] = erl.cdf(np.linspace(0, 5000, 5000))
+            ### Clip at 5%
             probs_a0[0:min_length_a0] = np.maximum(0.05, probs_a0[0:min_length_a0])
         # Complete tracks
         pt_i[has_parent] = probs_a0[age[has_parent].astype(int).squeeze()]

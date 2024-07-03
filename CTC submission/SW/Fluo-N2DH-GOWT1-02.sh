@@ -3,7 +3,7 @@ SEQUENCE="02"
 
 ./infer_ctc_data/infer_ctc_data "../${DATA}/${SEQUENCE}" \
 "./models/${DATA}/best_iou_model.pth" "./models/${DATA}/config.json" \
---shifts 50 --multiscale
+--shifts 32 --multiscale
 
 mkdir ../mht_input_${DATA}_${SEQUENCE}
 mkdir ../mht_input_${DATA}_${SEQUENCE}/${DATA}

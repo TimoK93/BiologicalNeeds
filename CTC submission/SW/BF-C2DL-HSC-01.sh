@@ -3,7 +3,7 @@ SEQUENCE="01"
 
 ./infer_ctc_data/infer_ctc_data "../${DATA}/${SEQUENCE}" \
 "./models/${DATA}/best_iou_model.pth" "./models/${DATA}/config.json" \
---shifts 12
+--shifts 10 # 12
 
 mkdir ../mht_input_${DATA}_${SEQUENCE}
 mkdir ../mht_input_${DATA}_${SEQUENCE}/${DATA}

@@ -7,6 +7,45 @@ import cv2
 
 from mht.utils import Gaussians, PoissonPointProcess, gaussian_pdf
 
+ESTIMATED_MUS = {
+    r"train\BF-C2DL-HSC\01_RES": 921,
+    r"train\BF-C2DL-HSC\02_RES": 339,
+    r"challenge\BF-C2DL-HSC\01_RES": 305,
+    r"challenge\BF-C2DL-HSC\02_RES": 262,
+    r"train\BF-C2DL-MuSC\01_RES": 820,
+    r"train\BF-C2DL-MuSC\02_RES": 326,
+    r"challenge\BF-C2DL-MuSC\01_RES": 340,
+    r"challenge\BF-C2DL-MuSC\02_RES": 382,
+    r"train\DIC-C2DH-HeLa\01_RES": 84,
+    r"train\DIC-C2DH-HeLa\02_RES": 84,
+    r"challenge\DIC-C2DH-HeLa\01_RES": 115,
+    r"challenge\DIC-C2DH-HeLa\02_RES": 115,
+    r"train\Fluo-C2DL-MSC\01_RES": 48,
+    r"train\Fluo-C2DL-MSC\02_RES": 48,
+    r"challenge\Fluo-C2DL-MSC\01_RES": 48,
+    r"challenge\Fluo-C2DL-MSC\02_RES": 48,
+    r"train\Fluo-N2DH-SIM+\01_RES": 65,
+    r"train\Fluo-N2DH-SIM+\02_RES": 59,
+    r"challenge\Fluo-N2DH-SIM+\01_RES": 110,
+    r"challenge\Fluo-N2DH-SIM+\02_RES": 55,
+    r"train\Fluo-N2DL-HeLa\01_RES": 53,
+    r"train\Fluo-N2DL-HeLa\02_RES": 64,
+    r"challenge\Fluo-N2DL-HeLa\01_RES": 52,
+    r"challenge\Fluo-N2DL-HeLa\02_RES": 76,
+    r"train\Fluo-N2DH-GOWT1\01_RES": 92,
+    r"train\Fluo-N2DH-GOWT1\02_RES": 92,
+    r"challenge\Fluo-N2DH-GOWT1\01_RES": 92,
+    r"challenge\Fluo-N2DH-GOWT1\02_RES": 92,
+    r"train\PhC-C2DH-U373\01_RES": 115,
+    r"train\PhC-C2DH-U373\02_RES": 115,
+    r"challenge\PhC-C2DH-U373\01_RES": 115,
+    r"challenge\PhC-C2DH-U373\02_RES": 115,
+    r"train\PhC-C2DL-PSC\01_RES": 88,
+    r"train\PhC-C2DL-PSC\02_RES": 98,
+    r"challenge\PhC-C2DL-PSC\01_RES": 89,
+    r"challenge\PhC-C2DL-PSC\02_RES": 88,
+}
+
 
 def get_img_files(img_path: str):
     """

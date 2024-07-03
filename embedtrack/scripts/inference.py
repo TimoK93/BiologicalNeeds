@@ -19,6 +19,8 @@ def get_arguments():
     parser.add_argument('--shifts', default="all", help="Test Time Shifts")
     parser.add_argument('--multiscale', action='store_true')
     parser.add_argument('--multi-segmentation', action='store_true')
+    parser.add_argument('--batchsize', default=16, help='Batch size for inference. Default: 16')
+
     return parser.parse_args()
 
 
@@ -61,6 +63,10 @@ def process(
         "PhC-C2DH-U373",
     ]
 
+    try:
+        shifts = int(shifts)
+    except ValueError:
+        pass
     assert shifts in ["all", "none"] or isinstance(shifts, int)
     if shifts == "all":
         SHIFTS = [0, 1, 2, 4, 8]
@@ -108,30 +114,6 @@ def process(
                                             os.path.join(
                                                 root.replace(img_path, new_img_path),
                                                 file))
-
-                    # ### ### ### ISBI CHALLENGE HACK
-                    # Copy masks if existing
-                    mask_path = os.path.join(img_path + "_ERR_SEG")
-                    new_mask_path = os.path.join(_res_path, data_id + "_ERR_SEG")
-                    if os.path.exists(mask_path):
-                        os.makedirs(new_mask_path, exist_ok=True)
-                        for root, dirs, files in os.walk(mask_path):
-                            for dir in dirs:
-                                os.makedirs(
-                                    os.path.join(
-                                        root.replace(mask_path, new_mask_path), dir),
-                                    exist_ok=True)
-                            for file in files:
-                                if not os.path.exists(
-                                        os.path.join(
-                                            root.replace(mask_path, new_mask_path),
-                                            file)):
-                                    shutil.copy(os.path.join(root, file),
-                                                os.path.join(
-                                                    root.replace(mask_path,
-                                                                 new_mask_path),
-                                                    file))
-                    # ### ### ###
 
                     # Copy path
                     img_path = new_img_path
