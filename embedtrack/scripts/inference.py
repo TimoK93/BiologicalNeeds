@@ -21,6 +21,19 @@ ALL_DATASETS = [
     ]
 
 
+SHIFTS = {
+    "Fluo-N2DH-SIM+": 23,
+    "Fluo-C2DL-MSC": 52,
+    "Fluo-N2DH-GOWT1": 32,
+    "PhC-C2DL-PSC": 7,
+    "BF-C2DL-HSC": 10,
+    "Fluo-N2DL-HeLa": 13,
+    "BF-C2DL-MuSC": 19,
+    "DIC-C2DH-HeLa": 57,
+    "PhC-C2DH-U373": 34,
+}
+
+
 def get_arguments():
     parser = argparse.ArgumentParser(
         description='Inference on a single dataset.'
@@ -32,7 +45,7 @@ def get_arguments():
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--challenge', action='store_true')
     parser.add_argument('--sequence', default=None, help='Dataset name')
-    parser.add_argument('--shifts', default="all", help="Test Time Shifts")
+    parser.add_argument('--shifts', default="default", help="Test Time Shifts")
     parser.add_argument('--multiscale', action='store_true')
     parser.add_argument('--multi-segmentation', action='store_true')
     parser.add_argument('--batch-size', default=16, help='Batch size for inference')
@@ -41,10 +54,8 @@ def get_arguments():
     return parser.parse_args()
 
 
-def process(
+def refine_arguments(
         root,
-        res_dir,
-        model_dir,
         train,
         challenge,
         data,
@@ -52,7 +63,6 @@ def process(
         shifts,
         multiscale,
         multi_segmentation,
-        batch_size,
         refine_segmentation,
 ):
     # Create data paths
@@ -71,9 +81,11 @@ def process(
         shifts = int(shifts)
     except ValueError:
         pass
-    assert shifts in ["all", "none"] or isinstance(shifts, int)
+    assert shifts in ["none", "default"] or isinstance(shifts, int)
     if shifts == "none":
         shifts = []
+    elif shifts == "default":
+        shifts = [0, SHIFTS[data]]
     else:
         assert int(shifts) > 0
         shifts = [0, int(shifts)]
@@ -95,6 +107,25 @@ def process(
     print(f"Multiscale: {multiscale}")
     print(f"Multi-segmentation: {multi_segmentation}")
     print(f"Refine segmentation: {refine_segmentation}")
+
+    return (
+        raw_data_paths, datasets, sequences, shifts, multiscale,
+        multi_segmentation, refine_segmentation
+    )
+
+
+def process(
+        res_dir,
+        model_dir,
+        shifts,
+        multiscale,
+        multi_segmentation,
+        batch_size,
+        refine_segmentation,
+        raw_data_paths,
+        datasets,
+        sequences,
+):
 
     # Inference all selected datasets
     for path in raw_data_paths:
@@ -135,23 +166,23 @@ def process(
                     img_path = new_img_path
 
                 # Select model
-                model_dir = os.path.join(model_dir, data)
-                if not os.path.exists(model_dir):
-                    print(f"no trained model for data set {data}, {model_dir}")
+                model = os.path.join(model_dir, data)
+                if not os.path.exists(model):
+                    print(f"no trained model for data set {data}, {model}")
                     continue
 
-                if os.path.exists(os.path.join(model_dir, "best_iou_model.pth")):
-                    model_path = os.path.join(model_dir, "best_iou_model.pth")
-                    config_file = os.path.join(model_dir, "config.json")
+                if os.path.exists(os.path.join(model, "best_iou_model.pth")):
+                    model_path = os.path.join(model, "best_iou_model.pth")
+                    config_file = os.path.join(model, "config.json")
                 else:
                     timestamps_trained_models = [
                         datetime.strptime(time_stamp, "%Y-%m-%d---%H-%M-%S")
-                        for time_stamp in os.listdir(model_dir)
+                        for time_stamp in os.listdir(model)
                     ]
                     timestamps_trained_models.sort()
                     last_model = timestamps_trained_models[-1].strftime("%Y-%m-%d---%H-%M-%S")
-                    model_path = os.path.join(model_dir, last_model, "best_iou_model.pth")
-                    config_file = os.path.join(model_dir, last_model, "config.json")
+                    model_path = os.path.join(model, last_model, "best_iou_model.pth")
+                    config_file = os.path.join(model, last_model, "config.json")
 
                 # Perform the inference
                 t_start = time()
@@ -173,17 +204,29 @@ def process(
 
 if __name__ == "__main__":
     args = get_arguments()
+    (
+        raw_data_paths, datasets, sequences, shifts, multiscale,
+        multi_segmentation, refine_segmentation
+    ) = refine_arguments(
+        args.root,
+        args.train,
+        args.challenge,
+        args.dataset,
+        args.sequence,
+        args.shifts,
+        args.multiscale,
+        args.multi_segmentation,
+        args.refine_segmentation,
+    )
     process(
-        root=args.root,
         model_dir=args.model_dir,
-        train=args.train,
-        challenge=args.challenge,
-        data=args.dataset,
-        sequence=args.sequence,
         res_dir=args.res_dir,
-        shifts=args.shifts,
-        multiscale=args.multiscale,
-        multi_segmentation=args.multi_segmentation,
+        shifts=shifts,
+        multiscale=multiscale,
+        multi_segmentation=multi_segmentation,
         batch_size=args.batch_size,
-        refine_segmentation=args.refine_segmentation,
+        refine_segmentation=refine_segmentation,
+        raw_data_paths=raw_data_paths,
+        datasets=datasets,
+        sequences=sequences,
     )
