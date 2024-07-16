@@ -7,43 +7,30 @@ import cv2
 
 from mht.utils import Gaussians, PoissonPointProcess, gaussian_pdf
 
+
 ESTIMATED_MUS = {
-    r"train\BF-C2DL-HSC\01_RES": 921,
-    r"train\BF-C2DL-HSC\02_RES": 339,
-    r"challenge\BF-C2DL-HSC\01_RES": 305,
-    r"challenge\BF-C2DL-HSC\02_RES": 262,
-    r"train\BF-C2DL-MuSC\01_RES": 820,
-    r"train\BF-C2DL-MuSC\02_RES": 326,
-    r"challenge\BF-C2DL-MuSC\01_RES": 340,
-    r"challenge\BF-C2DL-MuSC\02_RES": 382,
-    r"train\DIC-C2DH-HeLa\01_RES": 84,
-    r"train\DIC-C2DH-HeLa\02_RES": 84,
-    r"challenge\DIC-C2DH-HeLa\01_RES": 115,
-    r"challenge\DIC-C2DH-HeLa\02_RES": 115,
-    r"train\Fluo-C2DL-MSC\01_RES": 48,
-    r"train\Fluo-C2DL-MSC\02_RES": 48,
-    r"challenge\Fluo-C2DL-MSC\01_RES": 48,
-    r"challenge\Fluo-C2DL-MSC\02_RES": 48,
-    r"train\Fluo-N2DH-SIM+\01_RES": 65,
-    r"train\Fluo-N2DH-SIM+\02_RES": 59,
-    r"challenge\Fluo-N2DH-SIM+\01_RES": 110,
-    r"challenge\Fluo-N2DH-SIM+\02_RES": 55,
-    r"train\Fluo-N2DL-HeLa\01_RES": 53,
-    r"train\Fluo-N2DL-HeLa\02_RES": 64,
-    r"challenge\Fluo-N2DL-HeLa\01_RES": 52,
-    r"challenge\Fluo-N2DL-HeLa\02_RES": 76,
-    r"train\Fluo-N2DH-GOWT1\01_RES": 92,
-    r"train\Fluo-N2DH-GOWT1\02_RES": 92,
-    r"challenge\Fluo-N2DH-GOWT1\01_RES": 92,
-    r"challenge\Fluo-N2DH-GOWT1\02_RES": 92,
-    r"train\PhC-C2DH-U373\01_RES": 115,
-    r"train\PhC-C2DH-U373\02_RES": 115,
-    r"challenge\PhC-C2DH-U373\01_RES": 115,
-    r"challenge\PhC-C2DH-U373\02_RES": 115,
-    r"train\PhC-C2DL-PSC\01_RES": 88,
-    r"train\PhC-C2DL-PSC\02_RES": 98,
-    r"challenge\PhC-C2DL-PSC\01_RES": 89,
-    r"challenge\PhC-C2DL-PSC\02_RES": 88,
+    "train": {
+        "BF-C2DL-HSC": {"01": 921, "02": 339},
+        "BF-C2DL-MuSC": {"01": 820, "02": 326},
+        "DIC-C2DH-HeLa": {"01": 84, "02": 84},
+        "Fluo-C2DL-MSC": {"01": 48, "02": 48},
+        "Fluo-N2DH-SIM+": {"01": 65, "02": 59},
+        "Fluo-N2DL-HeLa": {"01": 53, "02": 64},
+        "Fluo-N2DH-GOWT1": {"01": 92, "02": 92},
+        "PhC-C2DH-U373": {"01": 115, "02": 115},
+        "PhC-C2DL-PSC": {"01": 88, "02": 98},
+    },
+    "challenge": {
+        "BF-C2DL-HSC": {"01": 305, "02": 262},
+        "BF-C2DL-MuSC": {"01": 340, "02": 382},
+        "DIC-C2DH-HeLa": {"01": 115, "02": 115},
+        "Fluo-C2DL-MSC": {"01": 48, "02": 48},
+        "Fluo-N2DH-SIM+": {"01": 110, "02": 55},
+        "Fluo-N2DL-HeLa": {"01": 52, "02": 76},
+        "Fluo-N2DH-GOWT1": {"01": 92, "02": 92},
+        "PhC-C2DH-U373": {"01": 115, "02": 115},
+        "PhC-C2DL-PSC": {"01": 89, "02": 88},
+    }
 }
 
 
@@ -94,42 +81,33 @@ class CellTrackingChallengeSequence:
 
     PARAMETER_SETTINGS = {
         "BF-C2DL-HSC": {
-            "mitosis_min_length_a0": 500,
             "P_B": 0.01, "P_S": 0.99,
             "max_sampling_hypotheses": 7,
             "system_uncertainty": 0.02,
         },
         "BF-C2DL-MuSC": {
-            "mitosis_min_length_a0": 400,
             "P_B": 0.3, "P_S": 0.99,
             "max_sampling_hypotheses": 7,
             "split_likelihood": .05,
             "segmentation_errors": True,
         },
         "DIC-C2DH-HeLa": {
-            "mitosis_min_length_a0": 80,
         },
         "Fluo-C2DL-MSC": {
-            "mitosis_min_length_a0": 20,
         },
         "Fluo-N2DH-SIM+": {
-            "mitosis_min_length_a0": 30,
             "split_likelihood": 0.1,
         },
         "Fluo-N2DL-HeLa": {
-            "mitosis_min_length_a0": 80,
             "split_likelihood": 0.1,
         },
         "Fluo-N2DH-GOWT1": {
-            "mitosis_min_length_a0": 20,
             "P_B": 0.50,
         },
         "PhC-C2DH-U373": {
-            "mitosis_min_length_a0": 50,
             "P_B": 0.5, "P_S": 0.5,
         },
         "PhC-C2DL-PSC": {
-            "mitosis_min_length_a0": 150,
             "max_sampling_hypotheses": 7,
         },
     }
@@ -148,17 +126,22 @@ class CellTrackingChallengeSequence:
 
     def get_tracker_arguments(self):
         ret = self.PARAMETER_SETTINGS[self.dataset_name]
+        ret["mitosis_min_length_a0"] = (
+            ESTIMATED_MUS)[self.subset][self.dataset_name][self.sequence_name]
         return ret
 
     def __init__(
             self,
             path: str,
+            subset: str,
             dataset_name: str,
             sequence_name: str,
             multiprocessing: bool = True
     ):
         self.dataset_name = dataset_name
         self.dataset_path = join(path, dataset_name)
+        self.subset = subset
+        self.sequence_name = sequence_name
         self.img_files = get_img_files(join(self.dataset_path, sequence_name))
         self.mask_files = get_mask_files(
             join(self.dataset_path, sequence_name + "_RES"))
