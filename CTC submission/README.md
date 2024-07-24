@@ -1,7 +1,7 @@
 # CTC Submission Scripts
 
-Our method was submitted to the **[7th ISBI Cell Tracking Challenge](https://celltrackingchallenge.net/ctc-vii/)**
-as team **ctc741**. 
+Our method was submitted to **[The Cell Tracking Challenge](https://celltrackingchallenge.net/)**
+as team **LUH-GE**. 
 To submit the results and to simplify the evaluation process, 
 a submission th the CTC needs to be in a specific standalone format that allows
 easy execution.
@@ -32,13 +32,7 @@ CTC Submission
 │   ├───01
 │   │   ├───001.tiff
 │   │   ├───...
-│   ├───01_ERR_SEG
-│   │   ├───001.tiff
-│   │   ├───...
 │   ├───02
-│   │   ├───001.tiff
-│   │   ├───...
-│   ├───02_ERR_SEG
 │   │   ├───001.tiff
 │   │   ├───...
 │───...
@@ -55,7 +49,7 @@ respective sequence directory.
 ./BF-C2DL-HSC_02.sh
 ```
 
-You can download the precompiled files here [here](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/CTC741_Submission_ISBI24.zip).
+You can download the precompiled files here [here](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/LUH-GE_Submission.zip).
 
 Copy the models from *PROJECT_ROOT/models* to 
 *PROJECT_ROOT/CTC Submission/SW/models*

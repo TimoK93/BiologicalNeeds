@@ -69,7 +69,6 @@ def infer_sequence(
             z=d["z"],
             z_old=d["z_old"],
             z_id=d["z_id"],
-            z_area=d["z_area"],
             z_is_at_border=d["z_is_at_border"],
             lambda_c_j=d["lambda_c_j"],
             P_D=d["P_D"],
@@ -145,7 +144,7 @@ if __name__ == "__main__":
         infer_sequence(
             data_root=args.data_root,
             dest_root=args.destination_root,
-            dataset_name=args.challenge,
+            dataset_name=args.dataset,
             sequence_name=args.sequence,
             tracker_args=tracking_args,
             subset=args.subset,

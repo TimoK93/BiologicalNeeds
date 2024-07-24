@@ -378,7 +378,7 @@ def convert_to_ctc(
     h = h[h[:, 7] > 0]  # Remove unassigned detections
     # Fill missing labels
     labels = np.unique(h[:, 5]).astype(int)
-    max_label = int(np.max(labels))
+    max_label = int(np.max(labels)) if len(labels) > 0 else 0
     if max_label - 1 != labels.size:
         for l in reversed(np.setdiff1d(np.arange(1, max_label + 1), labels)):
             h[h[:, 5] > l, 5] -= 1
@@ -387,7 +387,7 @@ def convert_to_ctc(
     if split_trajectory:
         # Find trajectories with missing frames
         labels = np.unique(h[:, 5]).astype(int)
-        next_label = int(np.max(labels) + 1)
+        next_label = int(np.max(labels) + 1) if len(h) > 0 else 1
         for l in labels:
             # Find frames between start and end where the trajectory is missing
             idx = np.where(h[:, 5] == l)[0]
@@ -408,7 +408,7 @@ def convert_to_ctc(
                     next_label += 1
     # Fill missing labels
     labels = np.unique(h[:, 5]).astype(int)
-    max_label = int(np.max(labels))
+    max_label = int(np.max(labels)) if len(labels) > 0 else 0
     if max_label - 1 != labels.size:
         for l in reversed(np.setdiff1d(np.arange(1, max_label + 1), labels)):
             h[h[:, 5] > l, 5] -= 1
@@ -470,7 +470,7 @@ def convert_to_ctc(
         h = h[np.argsort(h[:, 0])]
     # Split trajectories that have gaps that potentially could be there now
     labels = np.unique(h[:, 5]).astype(int)
-    next_label = int(np.max(labels) + 1)
+    next_label = int(np.max(labels) + 1) if len(h) > 0 else 1
     for l in labels:
         # Find frames between start and end where the trajectory is missing
         idx = np.where(h[:, 5] == l)[0]
@@ -512,7 +512,7 @@ def convert_to_ctc(
 
     # Remap unique labels to replace missing labels
     labels = np.unique(h[:, 5]).astype(int)
-    max_label = int(np.max(labels))
+    max_label = int(np.max(labels)) if len(labels) > 0 else 0
     if max_label - 1 != labels.size:
         for l in reversed(np.setdiff1d(np.arange(1, max_label + 1), labels)):
             h[h[:, 5] > l, 5] -= 1

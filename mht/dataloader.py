@@ -81,34 +81,77 @@ class CellTrackingChallengeSequence:
 
     PARAMETER_SETTINGS = {
         "BF-C2DL-HSC": {
-            "P_B": 0.01, "P_S": 0.99,
-            "max_sampling_hypotheses": 7,
-            "system_uncertainty": 0.02,
+            "max_number_of_hypotheses": 250,
+            "max_sampling_hypotheses": 5,
+            'min_object_probability': 0.01,
+            'P_S': 0.99,
+            'P_B': 0.01,
+            'P_B_border': 0.01,
+            'system_uncertainty': 0.02
         },
         "BF-C2DL-MuSC": {
-            "P_B": 0.3, "P_S": 0.99,
-            "max_sampling_hypotheses": 7,
-            "split_likelihood": .05,
-            "segmentation_errors": True,
+            "max_number_of_hypotheses": 250,
+            "max_sampling_hypotheses": 5,
+            'P_S': 0.9,
+            'P_B': 0.01,
+            'P_B_border': 0.01,
+            'system_uncertainty': 0.02
         },
         "DIC-C2DH-HeLa": {
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.5,
+            'P_B': 0.1,
+            'P_B_border': 0.1,
+            'system_uncertainty': 0.01
         },
         "Fluo-C2DL-MSC": {
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.5,
+            'P_B': 0.4,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.05
         },
         "Fluo-N2DH-SIM+": {
-            "split_likelihood": 0.1,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.99,
+            'P_B': 0.5,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.05
         },
         "Fluo-N2DL-HeLa": {
-            "split_likelihood": 0.1,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 5,
+            'P_S': 0.9,
+            'P_B': 0.1,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.01
         },
         "Fluo-N2DH-GOWT1": {
-            "P_B": 0.50,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.99,
+            'P_B': 0.3,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.02
         },
         "PhC-C2DH-U373": {
-            "P_B": 0.5, "P_S": 0.5,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.9,
+            'P_B': 0.1,
+            'P_B_border': 0.1,
+            'system_uncertainty': 0.01
         },
         "PhC-C2DL-PSC": {
+            "max_number_of_hypotheses": 150,
             "max_sampling_hypotheses": 7,
+            'P_S': 0.99,
+            'P_B': 0.01,
+            'P_B_border': 0.01,
+            'system_uncertainty': 0.0
         },
     }
 

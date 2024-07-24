@@ -408,7 +408,7 @@ if __name__ == "__main__":
     if args.single_sequence:
         postprocess_sequence(
             data_root=args.data_root,
-            dataset_name=args.challenge,
+            dataset_name=args.dataset,
             sequence_name=args.sequence,
         )
     else:

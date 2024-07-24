@@ -13,7 +13,7 @@ mv ../${DATA}/${SEQUENCE}_RES ../mht_input_${DATA}_${SEQUENCE}/${DATA}
 ./mht/inference --single-inference --dataset "${DATA}" --sequence \
   "${SEQUENCE}"\
   --data-root "../mht_input_${DATA}_${SEQUENCE}"\
-  --destination-root "../mht_result_${DATA}_${SEQUENCE}"
+  --destination-root "../mht_result_${DATA}_${SEQUENCE}" --subset challenge
 
 ./mht/interpolate --single-sequence --dataset "${DATA}" --sequence \
   "${SEQUENCE}"\

@@ -31,7 +31,6 @@ class MHTTracker:
             min_sampling_increment=0.01,
             min_object_probability=0.1,
             use_kalman_filter=False,
-            split_likelihood=0.25,
             P_S=0.9,  # 0.9
             P_B=0.1,  # 0.1
             P_B_border=0.35,
@@ -91,7 +90,6 @@ class MHTTracker:
         print("    min_sampling_increment: {}".format(min_sampling_increment))
         print("    min_object_probability: {}".format(min_object_probability))
         print("    use_kalman_filter: {}".format(use_kalman_filter))
-        print("    split_likelihood: {}".format(split_likelihood))
         print("    P_S: {}".format(P_S))
         print("    P_B: {}".format(P_B))
         print("    P_B_border: {}".format(P_B_border))
@@ -109,7 +107,6 @@ class MHTTracker:
         self.mbm += BernoulliMixture(0, -1, 0)
         self.hypothesis_idx = 1  # Index of the next hypothesis
         self.mitosis_min_length_a0 = mitosis_min_length_a0
-        self.split_likelihood = split_likelihood
         self.P_S = P_S
         self.P_B = P_B
         self.P_B_border = P_B_border
@@ -138,7 +135,6 @@ class MHTTracker:
             self,
             z: Gaussians,  # Measurements
             z_old: Gaussians,  # Measurement back-projection
-            z_area: np.ndarray,  # Area of measurements
             z_is_at_border: np.ndarray,  # Border flag of measurements
             lambda_c_j: np.ndarray,  # Clutter intensity of measurements
             P_D: Union[PPP, np.ndarray],  # Detection intensity
@@ -168,7 +164,6 @@ class MHTTracker:
         #     # Set everything to zero detections
         #     z = Gaussians()
         #     z_old = Gaussians()
-        #     z_area = np.zeros(0)
         #     z_id = np.zeros(0)
         #     lambda_c_j = np.zeros(0)
         #     z_pot_overseg = list()
@@ -206,7 +201,7 @@ class MHTTracker:
         # Predict and update
         self.predict()
         self.update(
-            z=z, z_old=z_old, z_area=z_area, z_id=z_id, lambda_c_j=lambda_c_j,
+            z=z, z_old=z_old, z_id=z_id, lambda_c_j=lambda_c_j,
             P_D=P_D, z_is_at_border=z_is_at_border
         )
         self.reduce()
@@ -258,7 +253,6 @@ class MHTTracker:
             self,
             z: Gaussians,
             z_old: Gaussians,
-            z_area: np.ndarray,
             z_id: np.ndarray,
             z_is_at_border: np.ndarray,
             lambda_c_j: np.ndarray,
@@ -308,13 +302,14 @@ class MHTTracker:
                 gating_distance=self.gating_distance,
                 gating_probability=self.gating_probability,
                 max_sampling_hypotheses=self.max_sampling_hypotheses,
-                hypothesis_idx=h + len(self.mbm), debug=debug,
+                hypothesis_idx=self.hypothesis_idx, debug=debug,
                 min_increment=self.min_increment,
                 mitosis_min_length_a0=self.mitosis_min_length_a0,
                 max_motion=max_motion,
                 use_kalman_filter=self.use_kalman_filter,
                 Q_mov=Q_mov,
             ))
+            self.hypothesis_idx += self.max_sampling_hypotheses
 
         new_hypotheses = []
         association_error = []
@@ -818,8 +813,8 @@ class MHTTracker:
             _age = h.age[inds, 0]
             _label = h.labels[inds]
             _unique_label, _label_counts = np.unique(_label, return_counts=True)
-            if self.mitosis_min_length_a0:
-                _age[_age > self.mitosis_min_length_a0] = self.mitosis_min_length_a0
+            # if self.mitosis_min_length_a0:
+            #     _age[_age > self.mitosis_min_length_a0] = self.mitosis_min_length_a0
             if self.mitosis_min_length_a0 is None:
                 _age *= 0
             positions.append(_position)
@@ -862,14 +857,6 @@ class MHTTracker:
                 same_hypotheses.append([h])
                 continue
             pot_hypotheses = pot_hypotheses[_same_position[:, 0]]
-            # Check if associations (i.e. under-segmentations) are the same
-            _assoc = np.stack([asso[p] for p in pot_hypotheses])
-            _assoc_diff = (_assoc != assoc[None, :]).sum(axis=1)
-            _same_assoc = np.argwhere(_assoc_diff == 0)
-            if _same_assoc.size == 0:
-                same_hypotheses.append([h])
-                continue
-            pot_hypotheses = pot_hypotheses[_same_assoc[:, 0]]
             # Remove the hypothesis from the search space
             tested_hypotheses.extend(pot_hypotheses.tolist())
             same_hypotheses.append([h] + pot_hypotheses.tolist())
