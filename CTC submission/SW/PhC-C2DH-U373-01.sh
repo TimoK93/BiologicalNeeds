@@ -3,7 +3,7 @@ SEQUENCE="01"
 
 ./infer_ctc_data/infer_ctc_data "../${DATA}/${SEQUENCE}" \
 "./models/${DATA}/best_iou_model.pth" "./models/${DATA}/config.json" \
---shifts 34 --multiscale
+--shifts 34 # --multiscale
 
 mkdir ../mht_input_${DATA}_${SEQUENCE}
 mkdir ../mht_input_${DATA}_${SEQUENCE}/${DATA}
@@ -13,7 +13,7 @@ mv ../${DATA}/${SEQUENCE}_RES ../mht_input_${DATA}_${SEQUENCE}/${DATA}
 ./mht/inference --single-inference --dataset "${DATA}" --sequence \
   "${SEQUENCE}"\
   --data-root "../mht_input_${DATA}_${SEQUENCE}"\
-  --destination-root "../mht_result_${DATA}_${SEQUENCE}"
+  --destination-root "../mht_result_${DATA}_${SEQUENCE}" --subset challenge
 
 ./mht/interpolate --single-sequence --dataset "${DATA}" --sequence \
   "${SEQUENCE}"\

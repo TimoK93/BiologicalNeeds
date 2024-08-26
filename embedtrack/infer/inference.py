@@ -551,7 +551,7 @@ def smooth_prediction_full(
             img_prev_aug = augment_image_batch(batch["image_prev"]).to(device)
 
             if len(shifts) != 0:
-                assert shifts[0] == 0
+                assert shifts[0] == 0, shifts
                 trans = [torch.zeros_like(img_prev_aug) for s in shifts]
                 for i, s in enumerate(shifts):
                     if s == 0:
@@ -895,8 +895,9 @@ def infer_sequence(
 
         instances_prev_gpu = cluster_prediction(
             cluster, seg_prev, min_mask_size)
-        instances_prev_gpu, _, _, _, _, _ = prev_data.refine_mask(
-            instances_prev_gpu)
+        if refine_segmentation:
+            instances_prev_gpu, _, _, _, _, _ = prev_data.refine_mask(
+                instances_prev_gpu)
 
         instances_prev = instances_prev_gpu.detach().cpu().numpy()
 
@@ -904,8 +905,9 @@ def infer_sequence(
             # Last frame of the sequence
             instances_curr_gpu = cluster_prediction(
                 cluster, seg_curr, min_mask_size)
-            instances_curr_gpu, _, _, _, _, _ = curr_data.refine_mask(
-                instances_curr_gpu)
+            if refine_segmentation:
+                instances_curr_gpu, _, _, _, _, _ = curr_data.refine_mask(
+                    instances_curr_gpu)
 
             instances_curr = instances_curr_gpu.detach().cpu().numpy()
             mask_idx_curr = get_indices_pandas(instances_curr)

@@ -48,7 +48,6 @@ def infer_sequence(
             z=d["z"],
             z_old=d["z_old"],
             z_id=d["z_id"],
-            z_area=d["z_area"],
             z_is_at_border=d["z_is_at_border"],
             lambda_c_j=d["lambda_c_j"],
             P_D=d["P_D"],
@@ -79,7 +78,11 @@ def infer_sequence(
         )
         res_root = join(interpolation_dir, dataset_name, sequence_name + "_RES")
         gt_root = join(gt_root, dataset_name, sequence_name + "_GT")
-        metrics = evaluate_sequence(res=res_root, gt=gt_root)
+        try:
+            metrics = evaluate_sequence(res=res_root, gt=gt_root)
+        except Exception as e:
+            print(e)
+            metrics = dict()
     else:
         metrics = dict()
     metrics["total_time"] = total_time
@@ -91,7 +94,6 @@ def infer_sequence(
 def check_if_run_is_evaluated(
         database,
         dataset_name,
-        sequence_name,
         tracker_args: dict = None,
 ):
     if not exists(database):
@@ -102,23 +104,23 @@ def check_if_run_is_evaluated(
 
     compare_dict = {
         "dataset_name": dataset_name,
-        "sequence_name": sequence_name,
     }
     compare_dict.update(tracker_args)
 
     for line in lines:
-        result_dict = eval(line)
-        result_dict.pop("metrics")
-        if compare_dict == result_dict:
-            return True
-
+        try:
+            result_dict = eval(line)
+            result_dict.pop("metrics")
+            if compare_dict == result_dict:
+                return True
+        except ValueError as e:
+            pass
     return False
 
 
 def store_results(
         database,
         dataset_name,
-        sequence_name,
         tracker_args: dict = None,
         metrics: dict = None,
 ):
@@ -129,7 +131,6 @@ def store_results(
     with open(database, "a") as file:
         file.write(str({
             "dataset_name": dataset_name,
-            "sequence_name": sequence_name,
             **tracker_args,
             "metrics": metrics,
         }) + "\n")
@@ -145,7 +146,7 @@ if __name__ == '__main__':
     args.add_argument("--postprocess", action="store_true", default=True)
     args.add_argument("--shuffle", action="store_true", default=False)
     args.add_argument("--challenge")
-    args.add_argument("--sequence")
+    args.add_argument("--sequence", default="all")
     args = args.parse_args()
 
     root = args.root
@@ -155,25 +156,26 @@ if __name__ == '__main__':
     shuffle = args.shuffle
 
     challenges = [
-        "DIC-C2DH-HeLa",
         "BF-C2DL-HSC",
-        "Fluo-N2DH-SIM+",
-        "Fluo-N2DL-HeLa",
+        "BF-C2DL-MuSC",
+        "DIC-C2DH-HeLa",
         "Fluo-C2DL-MSC",
         "Fluo-N2DH-GOWT1",
+        "Fluo-N2DH-SIM+",
+        "Fluo-N2DL-HeLa",
         "PhC-C2DH-U373",
-        "BF-C2DL-MuSC",
         "PhC-C2DL-PSC",
     ]
     assert args.challenge in challenges, f"Invalid challenge {args.challenge}"
     challenge = args.challenge
 
     sequences = ["01", "02"]
-    assert args.sequence in sequences, f"Invalid sequence {args.sequence}"
-    sequence = args.sequence
-
-    database = args.database + f"_{challenge}_{sequence}.txt"
-
+    assert args.sequence in sequences or args.sequence == "all", f"Invalid sequence {args.sequence}"
+    if args.sequence != "all":
+        sequences = [args.sequence]
+        database = os.path.join(args.database, f"{challenge}_{args.sequence}.txt")
+    else:
+        database = os.path.join(args.database, f"{challenge}.txt")
     tracker_args = []
 
     # max_number_of_hypotheses = 250,
@@ -187,16 +189,129 @@ if __name__ == '__main__':
     # P_B_border = 0.35,
     # system_uncertainty = 0.0,
 
-    for max_number_of_hypotheses in [1]:
-        for max_sampling_hypotheses in [1]:
-            for gating_probability in [0.01]:
-                for gating_distance in [10]:
-                    for min_sampling_increment in [0.01]:
-                        for min_object_probability in [0.1]:
-                            for P_S in [0.5, 0.9, 0.99]:
-                                for P_B in [0.01, 0.05, 0.1, 0.3, 0.5]:
-                                    for P_B_border in [0.01, 0.05, 0.1, 0.3, 0.5]:
-                                        for system_uncertainty in [0.0, 0.01, 0.02, 0.05]:
+    MAX_NUMBER_OF_HYPOTHESES = [1, 50, 150]
+    MAX_SAMPLING_HYPOTHESES = [1, 3, 5]
+    GATING_PROBABILITY = [0.01]
+    GATING_DISTANCE = [10]
+    MIN_SAMPLING_INCREMENT = [0.01]
+    MIN_OBJECT_PROBABILITY = [0.1]
+    P_S = [0.5, 0.9, 0.99]
+    P_B = [0.01, 0.1, 0.3, 0.5]
+    P_B_BORDER = [0.01, 0.1, 0.3, 0.5]
+    SYSTEM_UNCERTAINTY = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+
+    if challenge == "BF-C2DL-HSC":
+        MAX_NUMBER_OF_HYPOTHESES = [1, 50, 150, 250, 500, 1000]
+        MAX_SAMPLING_HYPOTHESES = [3, 5, 7]
+        P_S = [0.99]
+        P_B_BORDER = None
+        P_B = [0.01]
+        SYSTEM_UNCERTAINTY = [0.02]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.01]
+    elif challenge == "BF-C2DL-MuSC":
+        MAX_NUMBER_OF_HYPOTHESES = [250]
+        MAX_SAMPLING_HYPOTHESES = [5]
+        P_S = [0.9]
+        P_B_BORDER = [0.01]
+        P_B = [0.01]
+        SYSTEM_UNCERTAINTY = [0.02]
+        GATING_PROBABILITY = [0.01,]
+        GATING_DISTANCE = [10,]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1,]
+    elif challenge == "DIC-C2DH-HeLa":
+        MAX_NUMBER_OF_HYPOTHESES = [150]
+        MAX_SAMPLING_HYPOTHESES = [7]
+        P_S = [0.5]
+        P_B_BORDER = [0.1]
+        P_B = [0.1]
+        SYSTEM_UNCERTAINTY = [0.01]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1]
+    elif challenge == "Fluo-C2DL-MSC":
+        MAX_NUMBER_OF_HYPOTHESES = [150]
+        MAX_SAMPLING_HYPOTHESES = [7]
+        P_S = [0.5]
+        P_B_BORDER = [0.5]
+        P_B = [0.4]
+        SYSTEM_UNCERTAINTY = [0.05]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1]
+    elif challenge == "Fluo-N2DH-GOWT1":
+        MAX_NUMBER_OF_HYPOTHESES = [150]
+        MAX_SAMPLING_HYPOTHESES = [7]
+        P_S = [0.99]
+        P_B_BORDER = [0.5]
+        P_B = [0.3]
+        SYSTEM_UNCERTAINTY = [0.02]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1]
+    elif challenge == "Fluo-N2DH-SIM+":
+        MAX_NUMBER_OF_HYPOTHESES = [150]
+        MAX_SAMPLING_HYPOTHESES = [7]
+        P_S = [0.99]
+        P_B_BORDER = [0.5]
+        P_B = [0.5]
+        SYSTEM_UNCERTAINTY = [0.05]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1]
+    elif challenge == "Fluo-N2DL-HeLa":
+        MAX_NUMBER_OF_HYPOTHESES = [1, 50, 100, 150, 250, 500]
+        MAX_SAMPLING_HYPOTHESES = [1, 5, 7]
+        P_S = [0.9]
+        P_B_BORDER = [0.5]
+        P_B = [0.1]
+        SYSTEM_UNCERTAINTY = [0.01]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1]
+    elif challenge == "PhC-C2DH-U373":
+        MAX_NUMBER_OF_HYPOTHESES = [150]
+        MAX_SAMPLING_HYPOTHESES = [7]
+        P_S = [0.9]
+        P_B_BORDER = None
+        P_B = [0.1]
+        SYSTEM_UNCERTAINTY = [0.01]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.1]
+    elif challenge == "PhC-C2DL-PSC":
+        MAX_NUMBER_OF_HYPOTHESES = [1, 50, 100, 150, 250, 500]
+        MAX_SAMPLING_HYPOTHESES = [1, 5, 7]
+        P_S = [0.99]
+        P_B = [0.01]
+        P_B_BORDER = None
+        SYSTEM_UNCERTAINTY = [0.0]
+        GATING_PROBABILITY = [0.01]
+        GATING_DISTANCE = [10]
+        MIN_SAMPLING_INCREMENT = [0.01]
+        MIN_OBJECT_PROBABILITY = [0.01]
+
+
+    for max_number_of_hypotheses in MAX_NUMBER_OF_HYPOTHESES:
+        for max_sampling_hypotheses in MAX_SAMPLING_HYPOTHESES:
+            for gating_probability in GATING_PROBABILITY:
+                for gating_distance in GATING_DISTANCE:
+                    for min_sampling_increment in MIN_SAMPLING_INCREMENT:
+                        for min_object_probability in MIN_OBJECT_PROBABILITY:
+                            for p_s in P_S:
+                                for p_b in P_B:
+                                    P_B_SET = P_B_BORDER if P_B_BORDER is not None else [p_b]
+                                    for p_b_border in P_B_SET:
+                                        for system_uncertainty in SYSTEM_UNCERTAINTY:
                                             tracker_args.append({
                                                 "max_number_of_hypotheses": max_number_of_hypotheses,
                                                 "max_sampling_hypotheses": max_sampling_hypotheses,
@@ -204,38 +319,55 @@ if __name__ == '__main__':
                                                 "gating_distance": gating_distance,
                                                 "min_sampling_increment": min_sampling_increment,
                                                 "min_object_probability": min_object_probability,
-                                                "P_S": P_S,
-                                                "P_B": P_B,
-                                                "P_B_border": P_B_border,
+                                                "P_S": p_s,
+                                                "P_B": p_b,
+                                                "P_B_border": p_b_border,
                                                 "system_uncertainty": system_uncertainty,
                                             })
+
     if shuffle:
         import random
         random.shuffle(tracker_args)
-        random.shuffle(sequences)
 
-    for arg in tracker_args:
+    for i, arg in enumerate(tracker_args):
         if check_if_run_is_evaluated(
                 database,
                 challenge,
-                sequence,
                 tracker_args=arg,
         ):
             continue
-        print("Run", challenge, sequence, arg)
-        metrics = infer_sequence(
-            root,
-            tmp_dir,
-            gt_root,
-            dataset_name=challenge,
-            sequence_name=sequence,
-            tracker_args=arg,
-            postprocess=postprocess,
-        )
+        print(f"({i}/{len(tracker_args)})  Run", challenge, arg)
+        metrics = list()
+        for sequence in sequences:
+            metrics.append(infer_sequence(
+                root,
+                tmp_dir,
+                gt_root,
+                dataset_name=challenge,
+                sequence_name=sequence,
+                tracker_args=arg,
+                postprocess=postprocess,
+            ))
+        # average the metrics
+        _m = dict()
+        for key in metrics[0]:
+            num_values = 0
+            value = None
+            for m in metrics:
+                if key in m:
+                    if m[key] is not None:
+                        num_values += 1
+                        if value is None:
+                            value = m[key]
+                        else:
+                            value += m[key]
+            if num_values > 0:
+                _m[key] = value / num_values
+        metrics = _m
+
         store_results(
             database,
             challenge,
-            sequence,
             tracker_args=arg,
             metrics=metrics,
         )

@@ -14,13 +14,10 @@
 
 
 ## Introduction
-This repository provides a modified version used in the 
-**[7th ISBI challenge](https://celltrackingchallenge.net/ctc-vii/)** of 
-the method described in the
-**[Paper](https://arxiv.org/abs/2403.15011)**
+This repository provides code for the method described in the
+**[Paper](WILLBEADDED)**
 **Cell Tracking according to Biological Needs - 
-Strong Mitosis-aware Random-finite Sets Tracker with Aleatoric Uncertainty**. 
-The modifications are described [here](AFTER_ISBI_SUBMISSION).
+Strong Mitosis-aware Random-finite Sets Tracker with Aleatoric Uncertainty**.
 
 The framework is partially built on top of the **[EmbedTrack](https://git.scc.kit.edu/kit-loe-ge/embedtrack)** 
 repository of **Loeffler et al.**. We removed the training scripts and unrelated 
@@ -87,7 +84,6 @@ Data
 |   |   └───01
 |   |   └───01_GT
 |   |   └───01_ST
-|   |   └───01_ERR_SEG
 |   |   └───....
 |   └───....
 |    
@@ -135,11 +131,6 @@ Our method is applied in two steps and postprocessing routines:
 3. **Interpolation** is used to fill missing masks in the tracking results.
 4. **Postprocessing** is applied to satisfy the CTC requirements (e.g. no masks at image borders).
 
-**Note:** For the *ISBI'24 Challenge - Linking Only*, we hacked the EmbedTrack 
-framework such that the predicted outcome is similar to the *ERR_SEG* masks.
-EmbedTrack and our test-time segmentation framework is only used to generate 
-the association distributions. 
-
 The four inference routines are described next.
 
 #### 1. EmbedTrack and Advanced Test-Time Augmentation
@@ -153,9 +144,7 @@ python ./embedtrack/scripts/inference.py \
   --train \
   --dataset='DIC-C2DH-HeLa' \
   --res-path'results/embedtrack' \
-  --shifts=50 \
-  --multiscale \
-  --multi-segmentation
+  --shifts=50
 ```
 
 The following arguments can be used:
@@ -256,9 +245,8 @@ folder, such that no additional `--destination-root` argument is needed.
 
 
 ## CTC Submission Executables
-We participated as team ctc741 on the *ISBI 24 Cell Tracking Challenge 
-(Linking Only)*. Precompiled executables of our submission alongside with the 
-pretrained models can be found [here](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/CTC741_Submission_ISBI24.zip).
+We participated as team LUH-GE on *The Cell Tracking Challenge*. Precompiled executables of our submission alongside with the 
+pretrained models can be found [here](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/LUH-GE_Submission.zip).
 For further information, please read the instructions in 
 the ReadMe in the *CTC Submission* 
 directory.
@@ -271,8 +259,8 @@ If you use our work in your research, please cite:
 @article{kaiser2024cell,
   title={Cell Tracking according to Biological Needs--Strong Mitosis-aware Random-finite Sets Tracker with Aleatoric Uncertainty},
   author={Kaiser, Timo and Schier, Maximilian and Rosenhahn, Bodo},
-  journal={arXiv preprint arXiv:2403.15011},
-  year={2024}
+  journal={Hopefully will be filled with a journal later},
+  year={2025}
 }
 ```
 
