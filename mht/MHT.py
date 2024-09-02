@@ -387,7 +387,7 @@ class MHTTracker:
             print(f"    max_motion: {max_motion}")
         # Get Normalized s_ij and s_jt
         s_ij_num = MHTTracker._create_s_ij_num(
-            bm=bm, z_old=z_old, P_D_i=P_D_i, lambda_c_j=lambda_c_j,
+            bm=bm, z_old=z_old, lambda_c_j=lambda_c_j,
             gate=gating_distance,
         )
         s_ij, s_jt = MHTTracker._normalize_s_ij_s_jt(
@@ -519,13 +519,10 @@ class MHTTracker:
     def _create_s_ij_num(
             bm: BernoulliMixture,
             z_old: Gaussians,
-            P_D_i: np.ndarray,
             lambda_c_j: np.ndarray,
             gate: float,
     ) -> (np.ndarray, np.ndarray):
         # Create probability of association between objects and measurements
-        assert len(bm) == len(P_D_i)
-        assert P_D_i.shape == (len(bm),)
         # Expand matrices for vectorized operations
         objects = bm.__copy__()
         obj_mu = np.repeat(objects.gm.mu[:, None, ], len(z_old), axis=1)
