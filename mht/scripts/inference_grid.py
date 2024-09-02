@@ -143,7 +143,7 @@ if __name__ == '__main__':
     args.add_argument("--gt-root")
     args.add_argument("--database")
     args.add_argument("--tmp-dir")
-    args.add_argument("--postprocess", action="store_true", default=True)
+    args.add_argument("--postprocess", action="store_true", default=False)
     args.add_argument("--shuffle", action="store_true", default=False)
     args.add_argument("--challenge")
     args.add_argument("--sequence", default="all")
@@ -178,152 +178,51 @@ if __name__ == '__main__':
         database = os.path.join(args.database, f"{challenge}.txt")
     tracker_args = []
 
-    # max_number_of_hypotheses = 250,
-    # max_sampling_hypotheses = 3,
-    # gating_probability = 0.01,
-    # gating_distance = 10,
-    # min_sampling_increment = 0.01,
-    # min_object_probability = 0.1,
-    # P_S = 0.9,  # 0.9
-    # P_B = 0.1,  # 0.1
-    # P_B_border = 0.35,
-    # system_uncertainty = 0.0,
-
-    MAX_NUMBER_OF_HYPOTHESES = [1, 50, 150]
-    MAX_SAMPLING_HYPOTHESES = [1, 3, 5]
-    GATING_PROBABILITY = [0.01]
-    GATING_DISTANCE = [10]
-    MIN_SAMPLING_INCREMENT = [0.01]
-    MIN_OBJECT_PROBABILITY = [0.1]
-    P_S = [0.5, 0.9, 0.99]
-    P_B = [0.01, 0.1, 0.3, 0.5]
-    P_B_BORDER = [0.01, 0.1, 0.3, 0.5]
-    SYSTEM_UNCERTAINTY = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+    MAX_NUMBER_OF_HYPOTHESES = [1, 25, 50, 75, 100, 125, 150]
+    MAX_SAMPLING_HYPOTHESES = [1, 3, 5, 7]
+    MAX_NUMBER_OF_HYPOTHESES = reversed([max(1, int(x)) for x in range(0, 2000, 25)])
+    MAX_SAMPLING_HYPOTHESES = [max(1, int(x)) for x in range(0, 100, 2)]
 
     if challenge == "BF-C2DL-HSC":
-        MAX_NUMBER_OF_HYPOTHESES = [1, 50, 150, 250, 500, 1000]
-        MAX_SAMPLING_HYPOTHESES = [3, 5, 7]
-        P_S = [0.99]
-        P_B_BORDER = None
-        P_B = [0.01]
-        SYSTEM_UNCERTAINTY = [0.02]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.01]
+        pass
     elif challenge == "BF-C2DL-MuSC":
-        MAX_NUMBER_OF_HYPOTHESES = [250]
-        MAX_SAMPLING_HYPOTHESES = [5]
-        P_S = [0.9]
-        P_B_BORDER = [0.01]
-        P_B = [0.01]
-        SYSTEM_UNCERTAINTY = [0.02]
-        GATING_PROBABILITY = [0.01,]
-        GATING_DISTANCE = [10,]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1,]
+        pass
     elif challenge == "DIC-C2DH-HeLa":
-        MAX_NUMBER_OF_HYPOTHESES = [150]
-        MAX_SAMPLING_HYPOTHESES = [7]
-        P_S = [0.5]
-        P_B_BORDER = [0.1]
-        P_B = [0.1]
-        SYSTEM_UNCERTAINTY = [0.01]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1]
+        pass
     elif challenge == "Fluo-C2DL-MSC":
-        MAX_NUMBER_OF_HYPOTHESES = [150]
-        MAX_SAMPLING_HYPOTHESES = [7]
-        P_S = [0.5]
-        P_B_BORDER = [0.5]
-        P_B = [0.4]
-        SYSTEM_UNCERTAINTY = [0.05]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1]
+        pass
     elif challenge == "Fluo-N2DH-GOWT1":
-        MAX_NUMBER_OF_HYPOTHESES = [150]
-        MAX_SAMPLING_HYPOTHESES = [7]
-        P_S = [0.99]
-        P_B_BORDER = [0.5]
-        P_B = [0.3]
-        SYSTEM_UNCERTAINTY = [0.02]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1]
+        pass
     elif challenge == "Fluo-N2DH-SIM+":
-        MAX_NUMBER_OF_HYPOTHESES = [150]
-        MAX_SAMPLING_HYPOTHESES = [7]
-        P_S = [0.99]
-        P_B_BORDER = [0.5]
-        P_B = [0.5]
-        SYSTEM_UNCERTAINTY = [0.05]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1]
+        pass
     elif challenge == "Fluo-N2DL-HeLa":
-        MAX_NUMBER_OF_HYPOTHESES = [1, 50, 100, 150, 250, 500]
-        MAX_SAMPLING_HYPOTHESES = [1, 5, 7]
-        P_S = [0.9]
-        P_B_BORDER = [0.5]
-        P_B = [0.1]
-        SYSTEM_UNCERTAINTY = [0.01]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1]
+        pass
     elif challenge == "PhC-C2DH-U373":
-        MAX_NUMBER_OF_HYPOTHESES = [150]
-        MAX_SAMPLING_HYPOTHESES = [7]
-        P_S = [0.9]
-        P_B_BORDER = None
-        P_B = [0.1]
-        SYSTEM_UNCERTAINTY = [0.01]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.1]
+        pass
     elif challenge == "PhC-C2DL-PSC":
-        MAX_NUMBER_OF_HYPOTHESES = [1, 50, 100, 150, 250, 500]
-        MAX_SAMPLING_HYPOTHESES = [1, 5, 7]
-        P_S = [0.99]
-        P_B = [0.01]
-        P_B_BORDER = None
-        SYSTEM_UNCERTAINTY = [0.0]
-        GATING_PROBABILITY = [0.01]
-        GATING_DISTANCE = [10]
-        MIN_SAMPLING_INCREMENT = [0.01]
-        MIN_OBJECT_PROBABILITY = [0.01]
+        pass
 
+    # tracker_args.append({
+    #     "use_kalman_filter": True,
+    # })
+    # tracker_args.append({
+    #     "use_kalman_filter": False,
+    # })
+    # tracker_args.append({
+    #     "mitosis_min_length_a0": None,
+    # })
 
     for max_number_of_hypotheses in MAX_NUMBER_OF_HYPOTHESES:
-        for max_sampling_hypotheses in MAX_SAMPLING_HYPOTHESES:
-            for gating_probability in GATING_PROBABILITY:
-                for gating_distance in GATING_DISTANCE:
-                    for min_sampling_increment in MIN_SAMPLING_INCREMENT:
-                        for min_object_probability in MIN_OBJECT_PROBABILITY:
-                            for p_s in P_S:
-                                for p_b in P_B:
-                                    P_B_SET = P_B_BORDER if P_B_BORDER is not None else [p_b]
-                                    for p_b_border in P_B_SET:
-                                        for system_uncertainty in SYSTEM_UNCERTAINTY:
-                                            tracker_args.append({
-                                                "max_number_of_hypotheses": max_number_of_hypotheses,
-                                                "max_sampling_hypotheses": max_sampling_hypotheses,
-                                                "gating_probability": gating_probability,
-                                                "gating_distance": gating_distance,
-                                                "min_sampling_increment": min_sampling_increment,
-                                                "min_object_probability": min_object_probability,
-                                                "P_S": p_s,
-                                                "P_B": p_b,
-                                                "P_B_border": p_b_border,
-                                                "system_uncertainty": system_uncertainty,
-                                            })
+        tracker_args.append({
+            "max_number_of_hypotheses": max_number_of_hypotheses,
+            "max_sampling_hypotheses": 5,
+        })
+
+    for max_sampling_hypotheses in MAX_SAMPLING_HYPOTHESES:
+        tracker_args.append({
+            "max_number_of_hypotheses": 2000,
+            "max_sampling_hypotheses": max_sampling_hypotheses,
+        })
 
     if shuffle:
         import random
