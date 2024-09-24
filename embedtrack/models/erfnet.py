@@ -3,6 +3,9 @@
 # Eduardo Romera
 #######################
 
+"""
+Modified by Timo Kaiser
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,7 +14,6 @@ import torch.nn.functional as F
 class DownsamplerBlock(nn.Module):
     def __init__(self, ninput, noutput):
         super().__init__()
-
         self.conv = nn.Conv2d(
             ninput, noutput - ninput, (3, 3), stride=2, padding=1, bias=True
         )
@@ -31,13 +33,10 @@ class non_bottleneck_1d(nn.Module):
         self.conv3x1_1 = nn.Conv2d(
             chann, chann, (3, 1), stride=1, padding=(1, 0), bias=True
         )
-
         self.conv1x3_1 = nn.Conv2d(
             chann, chann, (1, 3), stride=1, padding=(0, 1), bias=True
         )
-
         self.bn1 = nn.BatchNorm2d(chann, eps=1e-03)
-
         self.conv3x1_2 = nn.Conv2d(
             chann,
             chann,
@@ -47,7 +46,6 @@ class non_bottleneck_1d(nn.Module):
             bias=True,
             dilation=(dilated, 1),
         )
-
         self.conv1x3_2 = nn.Conv2d(
             chann,
             chann,
@@ -57,9 +55,7 @@ class non_bottleneck_1d(nn.Module):
             bias=True,
             dilation=(1, dilated),
         )
-
         self.bn2 = nn.BatchNorm2d(chann, eps=1e-03)
-
         self.dropout = nn.Dropout2d(dropprob)
 
     def forward(self, input):
@@ -88,14 +84,10 @@ class Encoder(nn.Module):
             input_channels, 16
         )  # TODO input_channels = 1 (for gray-scale), 3 (for RGB)
         self.layers = nn.ModuleList()
-
         self.layers.append(DownsamplerBlock(16, 64))
-
         for x in range(0, 5):  # 5 times
             self.layers.append(non_bottleneck_1d(64, 0.03, 1))
-
         self.layers.append(DownsamplerBlock(64, 128))
-
         for x in range(0, 2):  # 2 times
             self.layers.append(non_bottleneck_1d(128, 0.3, 2))
             self.layers.append(non_bottleneck_1d(128, 0.3, 4))
@@ -104,10 +96,8 @@ class Encoder(nn.Module):
 
     def forward(self, input):
         output = self.initial_block(input)
-
         for layer in self.layers:
             output = layer(output)
-
         return output
 
 
@@ -128,49 +118,20 @@ class UpsamplerBlock(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, num_classes, n_init_features=128):
         super().__init__()
-
         self.layers = nn.ModuleList()
-
         self.layers.append(UpsamplerBlock(n_init_features, 64))
         self.layers.append(non_bottleneck_1d(64, 0.0, 1))
         self.layers.append(non_bottleneck_1d(64, 0.0, 1))
-
         self.layers.append(UpsamplerBlock(64, 16))
         self.layers.append(non_bottleneck_1d(16, 0.0, 1))
         self.layers.append(non_bottleneck_1d(16, 0.0, 1))
-
         self.output_conv = nn.ConvTranspose2d(
             16, num_classes, 2, stride=2, padding=0, output_padding=0, bias=True
         )
 
     def forward(self, input):
         output = input
-
         for layer in self.layers:
             output = layer(output)
-
         output = self.output_conv(output)
-
         return output
-
-
-# ERFNet
-
-
-class Net(nn.Module):
-    def __init__(
-        self, num_classes, input_channels, encoder=None
-    ):  # use encoder to pass pretrained encoder
-        super().__init__()
-        if encoder == None:
-            self.encoder = Encoder(num_classes, input_channels)
-        else:
-            self.encoder = encoder
-        self.decoder = Decoder(num_classes)
-
-    def forward(self, input, only_encode=False):
-        if only_encode:
-            return self.encoder.forward(input, predict=True)
-        else:
-            output = self.encoder(input)  # predict=False by default
-            return self.decoder.forward(output)

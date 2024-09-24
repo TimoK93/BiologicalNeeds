@@ -78,6 +78,8 @@ def postprocess(
         out_path,
         multiprocessing=True,
 ):
+    if tracks.size == 0:
+        tracks = np.zeros((0,8))
     # Merge nearest neighbors in close scenarios
     files = sorted([x for x in os.listdir(res_path) if x.endswith(".tif")])
     # Copy all files to the output directory
@@ -230,7 +232,7 @@ def postprocess_all(
         for _dataset in datasets:
             if dataset != _dataset and dataset is not None:
                 continue
-            #if _challenge == "BF-C2DL-HSC":
+            # if _dataset == "PhC-C2DL-PSC":
             #    continue
             for _sequence in ["01", "02"]:
                 if sequence != _sequence and sequence is not None:
@@ -305,7 +307,7 @@ if __name__ == "__main__":
         postprocess_sequence(
             data_root=args.data_root,
             dest_root=args.destination_root,
-            dataset_name=args.challenge,
+            dataset_name=args.dataset,
             sequence_name=args.sequence,
         )
     else:

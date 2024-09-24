@@ -8,6 +8,32 @@ import cv2
 from mht.utils import Gaussians, PoissonPointProcess, gaussian_pdf
 
 
+ESTIMATED_MUS = {
+    "train": {
+        "BF-C2DL-HSC": {"01": 921, "02": 339},
+        "BF-C2DL-MuSC": {"01": 820, "02": 326},
+        "DIC-C2DH-HeLa": {"01": 84, "02": 84},
+        "Fluo-C2DL-MSC": {"01": 48, "02": 48},
+        "Fluo-N2DH-SIM+": {"01": 65, "02": 59},
+        "Fluo-N2DL-HeLa": {"01": 53, "02": 64},
+        "Fluo-N2DH-GOWT1": {"01": 92, "02": 92},
+        "PhC-C2DH-U373": {"01": 115, "02": 115},
+        "PhC-C2DL-PSC": {"01": 88, "02": 98},
+    },
+    "challenge": {
+        "BF-C2DL-HSC": {"01": 305, "02": 262},
+        "BF-C2DL-MuSC": {"01": 340, "02": 382},
+        "DIC-C2DH-HeLa": {"01": 115, "02": 115},
+        "Fluo-C2DL-MSC": {"01": 48, "02": 48},
+        "Fluo-N2DH-SIM+": {"01": 110, "02": 55},
+        "Fluo-N2DL-HeLa": {"01": 52, "02": 76},
+        "Fluo-N2DH-GOWT1": {"01": 92, "02": 92},
+        "PhC-C2DH-U373": {"01": 115, "02": 115},
+        "PhC-C2DL-PSC": {"01": 89, "02": 88},
+    }
+}
+
+
 def get_img_files(img_path: str):
     """
     Get all images in a folder and sort them.
@@ -55,43 +81,77 @@ class CellTrackingChallengeSequence:
 
     PARAMETER_SETTINGS = {
         "BF-C2DL-HSC": {
-            "mitosis_min_length_a0": 500,
-            "P_B": 0.01, "P_S": 0.99,
-            "max_sampling_hypotheses": 7,
-            "system_uncertainty": 0.02,
+            "max_number_of_hypotheses": 250,
+            "max_sampling_hypotheses": 5,
+            'min_object_probability': 0.01,
+            'P_S': 0.99,
+            'P_B': 0.01,
+            'P_B_border': 0.01,
+            'system_uncertainty': 0.02
         },
         "BF-C2DL-MuSC": {
-            "mitosis_min_length_a0": 400,
-            "P_B": 0.3, "P_S": 0.99,
-            "max_sampling_hypotheses": 7,
-            "split_likelihood": .05,
-            "segmentation_errors": True,
+            "max_number_of_hypotheses": 250,
+            "max_sampling_hypotheses": 5,
+            'P_S': 0.9,
+            'P_B': 0.01,
+            'P_B_border': 0.01,
+            'system_uncertainty': 0.02
         },
         "DIC-C2DH-HeLa": {
-            "mitosis_min_length_a0": 80,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.5,
+            'P_B': 0.1,
+            'P_B_border': 0.1,
+            'system_uncertainty': 0.01
         },
         "Fluo-C2DL-MSC": {
-            "mitosis_min_length_a0": 20,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.5,
+            'P_B': 0.4,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.05
         },
         "Fluo-N2DH-SIM+": {
-            "mitosis_min_length_a0": 30,
-            "split_likelihood": 0.1,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.99,
+            'P_B': 0.5,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.05
         },
         "Fluo-N2DL-HeLa": {
-            "mitosis_min_length_a0": 80,
-            "split_likelihood": 0.1,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 5,
+            'P_S': 0.9,
+            'P_B': 0.1,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.01
         },
         "Fluo-N2DH-GOWT1": {
-            "mitosis_min_length_a0": 20,
-            "P_B": 0.50,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.99,
+            'P_B': 0.3,
+            'P_B_border': 0.5,
+            'system_uncertainty': 0.02
         },
         "PhC-C2DH-U373": {
-            "mitosis_min_length_a0": 50,
-            "P_B": 0.5, "P_S": 0.5,
+            "max_number_of_hypotheses": 150,
+            "max_sampling_hypotheses": 7,
+            'P_S': 0.9,
+            'P_B': 0.1,
+            'P_B_border': 0.1,
+            'system_uncertainty': 0.01
         },
         "PhC-C2DL-PSC": {
-            "mitosis_min_length_a0": 150,
+            "max_number_of_hypotheses": 150,
             "max_sampling_hypotheses": 7,
+            'P_S': 0.99,
+            'P_B': 0.01,
+            'P_B_border': 0.01,
+            'system_uncertainty': 0.0
         },
     }
 
@@ -109,17 +169,22 @@ class CellTrackingChallengeSequence:
 
     def get_tracker_arguments(self):
         ret = self.PARAMETER_SETTINGS[self.dataset_name]
+        ret["mitosis_min_length_a0"] = (
+            ESTIMATED_MUS)[self.subset][self.dataset_name][self.sequence_name]
         return ret
 
     def __init__(
             self,
             path: str,
+            subset: str,
             dataset_name: str,
             sequence_name: str,
             multiprocessing: bool = True
     ):
         self.dataset_name = dataset_name
         self.dataset_path = join(path, dataset_name)
+        self.subset = subset
+        self.sequence_name = sequence_name
         self.img_files = get_img_files(join(self.dataset_path, sequence_name))
         self.mask_files = get_mask_files(
             join(self.dataset_path, sequence_name + "_RES"))

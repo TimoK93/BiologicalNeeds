@@ -30,8 +30,14 @@ import torch
 
 
 def inference(
-        raw_data_path, model_path, config_file, batch_size=32, shifts=[],
-        multiscale=False, multisegmentation=False
+        raw_data_path,
+        model_path,
+        config_file,
+        batch_size=32,
+        shifts=[],
+        multiscale=False,
+        multisegmentation=False,
+        refine_segmentation=False,
 ):
     """
     Segment and track a ctc dataset using a trained EmbedTrack model.
@@ -50,6 +56,8 @@ def inference(
             whether to use multiscale inference
         multisegmentation: bool
             whether to use multisegmentation
+        refine_segmentation: bool
+            whether to use segmentation refinement
     """
     raw_data_path = Path(raw_data_path)
     model_path = Path(model_path)
@@ -144,6 +152,7 @@ def inference(
         shifts=shifts,
         multiscale=multiscale,
         multisegmentation=multisegmentation,
+        refine_segmentation=refine_segmentation,
     )
     # foi_correction(tracking_dir, data_set) todo: reactivate for standard
     # fill_empty_frames(tracking_dir) todo: reactivate for standard
@@ -227,28 +236,31 @@ if __name__ == "__main__":
     PARSER.add_argument("raw_image_path", type=str)
     PARSER.add_argument("model_path", type=str)
     PARSER.add_argument("config_file_path", type=str)
-    PARSER.add_argument('--shifts', default="all", help="Test Time Shifts")
     PARSER.add_argument('--multiscale', action='store_true')
-    PARSER.add_argument('--multisegmentation', action='store_true')
-
+    PARSER.add_argument('--shifts', default="none", help="Test Time Shifts")
+    PARSER.add_argument('--multi-segmentation', action='store_true')
+    PARSER.add_argument('--batch-size', default=16, help='Batch size for inference')
+    PARSER.add_argument('--refine-segmentation', action='store_true')
     ARGS = PARSER.parse_args()
 
-    assert ARGS.shifts in ["all", "none"] or ARGS.shifts.isdigit()
-    if ARGS.shifts == "all":
-        SHIFTS = [0, 1, 2, 4, 8]
-    elif ARGS.shifts == "none":
+    assert ARGS.shifts in ["none"] or ARGS.shifts.isdigit()
+    if ARGS.shifts == "none":
         SHIFTS = []
     else:
         assert int(ARGS.shifts) > 0
         SHIFTS = [0, int(ARGS.shifts)]
     print(f"Shifts: {SHIFTS}")
     print(f"Multiscale: {ARGS.multiscale}")
-    print(f"Multisegmentation: {ARGS.multisegmentation}")
+    print(f"Multisegmentation: {ARGS.multi_segmentation}")
+    print(f"Refine Segmentation: {ARGS.refine_segmentation}")
 
     inference(
-        ARGS.raw_image_path, ARGS.model_path, ARGS.config_file_path,
-        batch_size=16,
+        raw_data_path=ARGS.raw_image_path,
+        model_path=ARGS.model_path,
+        config_file=ARGS.config_file_path,
+        batch_size=ARGS.batch_size,
         shifts=SHIFTS,
         multiscale=ARGS.multiscale,
-        multisegmentation=ARGS.multisegmentation
+        multisegmentation=ARGS.multi_segmentation,
+        refine_segmentation=ARGS.refine_segmentation,
     )

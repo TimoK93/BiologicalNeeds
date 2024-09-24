@@ -36,6 +36,7 @@ def infer_all(
                     dataset_name=_dataset,
                     sequence_name=_sequence,
                     tracker_args=tracker_args,
+                    subset=_subset,
                 )
 
 
@@ -44,6 +45,7 @@ def infer_sequence(
         dest_root,
         dataset_name,
         sequence_name,
+        subset,
         tracker_args: dict = None,
 ):
     in_dir = os.path.join(data_root, dataset_name, sequence_name + "_RES")
@@ -55,6 +57,7 @@ def infer_sequence(
         path=data_root,
         dataset_name=dataset_name,
         sequence_name=sequence_name,
+        subset=subset,
     )
     kwargs = data.get_tracker_arguments()
     if tracker_args is not None:
@@ -66,12 +69,9 @@ def infer_sequence(
             z=d["z"],
             z_old=d["z_old"],
             z_id=d["z_id"],
-            z_area=d["z_area"],
             z_is_at_border=d["z_is_at_border"],
             lambda_c_j=d["lambda_c_j"],
             P_D=d["P_D"],
-            z_pot_overseg=d["z_pot_overseg"],
-            z_pot_underseg=d["z_pot_underseg"],
         )
         print(f"\r(After Processing Frame {i}) {tracker}", end="\n", flush=True)
 
@@ -144,9 +144,10 @@ if __name__ == "__main__":
         infer_sequence(
             data_root=args.data_root,
             dest_root=args.destination_root,
-            dataset_name=args.challenge,
+            dataset_name=args.dataset,
             sequence_name=args.sequence,
             tracker_args=tracking_args,
+            subset=args.subset,
         )
     else:
         infer_all(

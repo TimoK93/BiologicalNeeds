@@ -551,7 +551,7 @@ def smooth_prediction_full(
             img_prev_aug = augment_image_batch(batch["image_prev"]).to(device)
 
             if len(shifts) != 0:
-                assert shifts[0] == 0
+                assert shifts[0] == 0, shifts
                 trans = [torch.zeros_like(img_prev_aug) for s in shifts]
                 for i, s in enumerate(shifts):
                     if s == 0:
@@ -735,8 +735,9 @@ def infer_sequence(
         cluster,
         min_mask_size,
         shifts=[],
-        multiscale=True,
-        multisegmentation=True
+        multiscale=False,
+        multisegmentation=False,
+        refine_segmentation=False,
 ):
     """
     Infer a sequence of images and store the predicted instance segmentation and the tracking offsets.
@@ -780,27 +781,6 @@ def infer_sequence(
         summary_curr = dict()
         img_file_t_curr = img_files[t_curr_frame]
         img_file_t_prev = img_files[time_points[i + 1]]
-
-        # ### ### ###
-        # A Hack for the ISBI challenge that reads in the mask files and uses them as Output
-        if "/01/" in img_file_t_curr:
-            mask_file_t_curr = img_file_t_curr.replace("/01/", "/01_ERR_SEG/")
-        else:
-            mask_file_t_curr = img_file_t_curr.replace("/02/", "/02_ERR_SEG/")
-        mask_file_t_curr = os.path.join(
-            os.path.dirname(mask_file_t_curr),
-            "mask" + os.path.basename(mask_file_t_curr)[1:])
-        if "/01/" in img_file_t_prev:
-            mask_file_t_prev = img_file_t_prev.replace("/01/", "/01_ERR_SEG/")
-        else:
-            mask_file_t_prev = img_file_t_prev.replace("/02/", "/02_ERR_SEG/")
-        mask_file_t_prev = os.path.join(
-            os.path.dirname(mask_file_t_prev),
-            "mask" + os.path.basename(mask_file_t_prev)[1:])
-
-        err_mask_prev = tifffile.imread(mask_file_t_prev)
-        err_mask_curr = tifffile.imread(mask_file_t_curr)
-        # ### ### ###
 
         ret = infer_image(
             img_file_t_curr=img_file_t_curr,
@@ -913,27 +893,21 @@ def infer_sequence(
             cluster.pixel_x, seg_prev, seg_prev_std, None, None,
             None, seg_prev_c_side)
 
-        # ### ### ### ISBI HACK
-        # instances_prev_gpu = cluster_prediction(
-        #     cluster, seg_prev, min_mask_size)
-        # instances_prev_gpu, _, _, _, _, _ = prev_data.refine_mask(
-        #     instances_prev_gpu)
-        instances_prev_gpu = torch.from_numpy(
-            err_mask_prev.astype(int)).to(device).to(torch.int16)
-        # ### ### ###
+        instances_prev_gpu = cluster_prediction(
+            cluster, seg_prev, min_mask_size)
+        if refine_segmentation:
+            instances_prev_gpu, _, _, _, _, _ = prev_data.refine_mask(
+                instances_prev_gpu)
 
         instances_prev = instances_prev_gpu.detach().cpu().numpy()
 
         if i == 0:
-            # ### ### ### ISBI HACK
             # Last frame of the sequence
-            # instances_curr_gpu = cluster_prediction(
-            #     cluster, seg_curr, min_mask_size)
-            # instances_curr_gpu, _, _, _, _, _ = curr_data.refine_mask(
-            #     instances_curr_gpu)
-            instances_curr_gpu = torch.from_numpy(err_mask_curr.astype(int)).to(
-                device).to(torch.int16)
-            # ### ### ###
+            instances_curr_gpu = cluster_prediction(
+                cluster, seg_curr, min_mask_size)
+            if refine_segmentation:
+                instances_curr_gpu, _, _, _, _, _ = curr_data.refine_mask(
+                    instances_curr_gpu)
 
             instances_curr = instances_curr_gpu.detach().cpu().numpy()
             mask_idx_curr = get_indices_pandas(instances_curr)
@@ -1163,46 +1137,6 @@ def _clip_positions(estimated_position, img_shape):
     return estimated_position
 
 
-def remove_single_frame_tracks(tracking_dir):
-    """
-    Remove tracks of length 1 without any predecessor.
-    Args:
-        tracking_dir: string
-            path to the tracking directory
-    """
-    lineage = pd.read_csv(
-        os.path.join(tracking_dir, "res_track.txt"),
-        delimiter=" ",
-        header=None,
-        index_col=None,
-        names=["track_id", "t_start", "t_end", "predecessor_id"],
-    )
-    res_dir = tracking_dir + "_cleaned"
-    single_frame_tracks = lineage[
-        (lineage["t_start"] == lineage["t_end"]) & (lineage["predecessor_id"] == 0)
-    ]
-    single_frame_tracks = single_frame_tracks[
-        ~np.isin(single_frame_tracks["track_id"], lineage["predecessor_id"])
-    ]
-    tracks_by_time = single_frame_tracks.groupby("t_start", group_keys=True)
-    if not os.path.exists(res_dir):
-        os.makedirs(res_dir)
-    for file in os.listdir(tracking_dir):
-        if not file.endswith("tif"):
-            continue
-        image = tifffile.imread(os.path.join(tracking_dir, file))
-        time_point = int(re.findall("\d+", file)[0])
-        if time_point in tracks_by_time.groups:
-            tracks_to_remove = tracks_by_time.get_group(time_point)
-            for track_id in tracks_to_remove["track_id"].values:
-                image[image == track_id] = 0
-        tifffile.imsave(os.path.join(res_dir, file), image.astype(np.uint16))
-    lineage = lineage.drop(index=single_frame_tracks.index)
-    lineage.to_csv(
-        os.path.join(res_dir, "res_track.txt"), sep=" ", index=False, header=False
-    )
-
-
 # for inference different grid (larger grid needed but the offsets where
 # learned for original grid -> extend the grid while keeping the scalars
 # of the original grid size and pixel size
@@ -1415,15 +1349,6 @@ def edit_tracks_with_missing_masks(tracking_dir):
                     "t_e": t_end,
                     "pred": tracklet_parent,
                 }])], ignore_index=True)
-            # lineage_data = lineage_data.append(
-            #     {
-            #         "m_id": max_track_id,
-            #         "t_s": t_start,
-            #         "t_e": t_end,
-            #         "pred": tracklet_parent,
-            #     },
-            #     ignore_index=True,
-            # )
             tracklet_parent = max_track_id
 
     lineage_data.to_csv(

@@ -5,6 +5,7 @@ import pickle
 from typing import Union
 from multiprocessing import Pool, cpu_count
 from scipy.optimize import linear_sum_assignment
+from scipy.stats import gamma
 
 from mht.utils import Gaussians, \
     PoissonPointProcess as PPP, BernoulliMixture, MultiBernoulliMixture, \
@@ -30,12 +31,10 @@ class MHTTracker:
             min_sampling_increment=0.01,
             min_object_probability=0.1,
             use_kalman_filter=False,
-            split_likelihood=0.25,
             P_S=0.9,  # 0.9
             P_B=0.1,  # 0.1
             P_B_border=0.35,
             system_uncertainty=0.0,
-            segmentation_errors=True,
     ):
         """
         A PMBM tracker implementation.
@@ -91,12 +90,10 @@ class MHTTracker:
         print("    min_sampling_increment: {}".format(min_sampling_increment))
         print("    min_object_probability: {}".format(min_object_probability))
         print("    use_kalman_filter: {}".format(use_kalman_filter))
-        print("    split_likelihood: {}".format(split_likelihood))
         print("    P_S: {}".format(P_S))
         print("    P_B: {}".format(P_B))
         print("    P_B_border: {}".format(P_B_border))
         print("    system_uncertainty: {}".format(system_uncertainty))
-        print("    segmentation_errors: {}".format(segmentation_errors))
 
         self.debug_mode = debug_mode
         self.multiprocessing = multiprocessing
@@ -110,7 +107,6 @@ class MHTTracker:
         self.mbm += BernoulliMixture(0, -1, 0)
         self.hypothesis_idx = 1  # Index of the next hypothesis
         self.mitosis_min_length_a0 = mitosis_min_length_a0
-        self.split_likelihood = split_likelihood
         self.P_S = P_S
         self.P_B = P_B
         self.P_B_border = P_B_border
@@ -123,7 +119,6 @@ class MHTTracker:
         self.min_increment = min_sampling_increment
         self.min_object_probability = min_object_probability
         self.use_kalman_filter = use_kalman_filter
-        self.segmentation_errors = segmentation_errors
 
         """ Historical data """
         self.current_frame = 0
@@ -140,13 +135,10 @@ class MHTTracker:
             self,
             z: Gaussians,  # Measurements
             z_old: Gaussians,  # Measurement back-projection
-            z_area: np.ndarray,  # Area of measurements
             z_is_at_border: np.ndarray,  # Border flag of measurements
             lambda_c_j: np.ndarray,  # Clutter intensity of measurements
             P_D: Union[PPP, np.ndarray],  # Detection intensity
             z_id: np.ndarray = None,  # Indices of measurements
-            z_pot_overseg: list = None,  # Pot. over-segmented measurements
-            z_pot_underseg: list = None,  # Pot. merged measurements
     ):
         """
         Perform one step of the PMBM tracker.
@@ -168,21 +160,15 @@ class MHTTracker:
         if self.system_uncertainty > 0:
             z_old.P += np.eye(2) * self.system_uncertainty ** 2
 
-        if not self.segmentation_errors:
-            z_pot_underseg = []
-            z_pot_overseg = []
-
         # if self.current_frame > 0:
         #     # Set everything to zero detections
         #     z = Gaussians()
         #     z_old = Gaussians()
-        #     z_area = np.zeros(0)
         #     z_id = np.zeros(0)
         #     lambda_c_j = np.zeros(0)
         #     z_pot_overseg = list()
         #     z_pot_underseg = list()
         #     z_is_at_border = np.zeros(0, dtype=bool)
-
 
         assert ~np.isnan(z.mu).any()
         assert ~np.isnan(z.P).any()
@@ -198,8 +184,6 @@ class MHTTracker:
                 assert ~np.isnan(P_D).any()
             else:
                 raise TypeError(f"Unknown type of P_D: {type(P_D)}")
-        z_pot_overseg = list() if z_pot_overseg is None else z_pot_overseg
-        z_pot_underseg = list() if z_pot_underseg is None else z_pot_underseg
         # Associate measurements to background label if no labels are provided
         if self.debug_mode:
             print("\n -------------------")
@@ -217,9 +201,8 @@ class MHTTracker:
         # Predict and update
         self.predict()
         self.update(
-            z=z, z_old=z_old, z_area=z_area, z_id=z_id, lambda_c_j=lambda_c_j,
-            z_pot_overseg=z_pot_overseg, z_pot_underseg=z_pot_underseg, P_D=P_D,
-            z_is_at_border=z_is_at_border
+            z=z, z_old=z_old, z_id=z_id, lambda_c_j=lambda_c_j,
+            P_D=P_D, z_is_at_border=z_is_at_border
         )
         self.reduce()
         # Update meta data
@@ -264,21 +247,15 @@ class MHTTracker:
         if self.use_kalman_filter:
             for i in range(len(self.mbm.bm)):
                 self.mbm.bm[i].gm.P += Q_mov[None, ]
-        # else:
-        #     for i in range(len(self.mbm.bm)):
-        #         self.mbm.bm[i].gm.P += Q_mov[None, ]
 
     ''' Update '''
     def update(
             self,
             z: Gaussians,
             z_old: Gaussians,
-            z_area: np.ndarray,
             z_id: np.ndarray,
             z_is_at_border: np.ndarray,
             lambda_c_j: np.ndarray,
-            z_pot_overseg: list,
-            z_pot_underseg: list,
             P_D: Union[PPP, np.ndarray],
     ):
         """ Update the PMBM filter with the given measurements. """
@@ -306,162 +283,34 @@ class MHTTracker:
         s_jt_num = self._create_s_jt_numerator(
             p_b, p_b_border, z_is_at_border, lambda_c_j)
 
-        ''' Merge potential over-segmented measurements in old measurements '''
-        # Find and merge potential over-segmented measurements
-        for bm in self.mbm.bm:
-            ids, cnts = np.unique(
-                bm.labels[bm.labels > 0], return_counts=True)
-            ids = ids[cnts > 1]
-            for i in zip(ids):
-                inds = np.where(bm.labels == i)[0]
-                # Merge measurements
-                mu = np.mean(bm.gm.mu[inds], axis=0, keepdims=True)
-                diff = bm.gm.mu[inds] - mu
-                P = np.mean(bm.gm.P[inds] + diff[:, :, None] @ diff[:, None, :], axis=0, keepdims=True)
-                bm.gm.mu[inds] = mu
-                bm.gm.P[inds] = P
-                # Remove merged measurements except one
-                keep = np.ones(len(bm.gm), dtype=bool)
-                keep[inds[1:]] = False
-                bm.gm.mu = bm.gm.mu[keep]
-                bm.gm.P = bm.gm.P[keep]
-                bm.labels = bm.labels[keep]
-                bm.associated_id = bm.associated_id[keep]
-                bm.r = bm.r[keep]
-                bm.age = bm.age[keep]
-                bm.parent_label = bm.parent_label[keep]
-
         # Set associated ids to 0
         for bm in self.mbm.bm:
             bm.associated_id = np.zeros_like(bm.associated_id)
 
-        ''' Create multiple hypotheses based on the ambiguous measurements '''
-        # z_pot_overseg: [(z_id1, z_id2), (z_id1, z_id5, z_id8), ...]
-        all_z, all_z_old, all_z_id, all_lambda_c_j, all_s_jt_num = (
-            [z], [z_old], [z_id], [lambda_c_j], [s_jt_num])
-        all_likelihoods = [1]
-        # if len(z_pot_overseg) > 0:
-        #     all_z, all_z_old, all_z_id, all_lambda_c_j, all_s_jt_num = [], [], [], [], []
-        #     all_likelihoods = []
-        self.debug(f"    z_pot_overseg: {z_pot_overseg}")
-        for i, candidate_dict in enumerate(z_pot_overseg):
-            candidates = candidate_dict["candidates"]
-            s = candidate_dict["splits"]
-            gm, gm_old, l_c_j = s["z"], s["z_old"], s["lambda_c_j"]
-            _z, _z_old, _z_id = z.__copy__(), z_old.__copy__(), z_id.__copy__()
-            _lambda_c_j = lambda_c_j.__copy__()
-            _z_is_at_border = z_is_at_border.__copy__()
-            inds = np.where(np.isin(_z_id, candidates))[0]
-            # Merge measurements
-            w = z_area[inds] / np.sum(z_area[inds])
-            mu = np.sum(w[:, None] * _z.mu[inds], axis=0, keepdims=True)
-            diff = _z.mu[inds] - mu
-            P = np.sum(w[:, None, None] * (_z.P[inds] + diff[:, :, None] @ diff[:, None, :]), axis=0, keepdims=True)
-
-            _z.mu[inds] = mu  # gm.mu  # mu
-            _z.P[inds] = P  # gm.P  # P
-            mu_old = np.sum(w[:, None] * _z_old.mu[inds], axis=0, keepdims=True)
-            diff_old = _z_old.mu[inds] - mu_old
-            P_old = np.sum(w[:, None, None] * (_z_old.P[inds] + diff_old[:, :, None] @ diff_old[:, None, :]),
-                          axis=0, keepdims=True)
-            _z_old.mu[inds] = mu_old  # gm_old.mu
-            _z_old.P[inds] = P_old  # gm_old.P
-            _z_id[inds] = 1000000 + i
-            _lambda_c_j[inds] = np.sum(w * _lambda_c_j[inds])
-            # Remove merged measurements except one
-            keep = np.ones(len(_z), dtype=bool)
-            keep[inds[1:]] = False
-            _z.mu = _z.mu[keep]
-            _z.P = _z.P[keep]
-            _z_old.mu = _z_old.mu[keep]
-            _z_old.P = _z_old.P[keep]
-            _z_id = _z_id[keep]
-            _lambda_c_j = _lambda_c_j[keep]
-            _z_is_at_border = _z_is_at_border[keep]
-            all_z.append(_z)
-            all_z_old.append(_z_old)
-            all_z_id.append(_z_id)
-            all_lambda_c_j.append(_lambda_c_j)
-            _s_jt_num = self._create_s_jt_numerator(
-                P_B=self.P_B, P_B_border=self.P_B_border,
-                is_j_at_border=_z_is_at_border, lambda_c_j=_lambda_c_j,
-            )
-            all_s_jt_num.append(_s_jt_num)
-            all_likelihoods.append(self.split_likelihood)
-
-        # z_pot_underseg: [{
-        #       z_id: id, splits: {z: z, z_old: z_old, lambda_c_j: lambda_c_j}
-        #   }, ...]
-        self.debug(f"    z_pot_underseg: {z_pot_underseg}")
-        for split in z_pot_underseg:
-            s_id = split["z_id"]
-            s_z, s_z_old = split["splits"]["z"], split["splits"]["z_old"]
-            s_lambda_c_j = split["splits"]["lambda_c_j"]
-            _z, _z_old, _z_id = z.__copy__(), z_old.__copy__(), z_id.__copy__()
-            _z_is_at_border = z_is_at_border.__copy__()
-            _lambda_c_j = lambda_c_j.__copy__()
-            ind = np.where(np.isin(_z_id, s_id))[0]
-            # Remove from original measurements
-            keep = np.ones(len(_z), dtype=bool)
-            keep[ind] = False
-            _z.mu = _z.mu[keep]
-            _z.P = _z.P[keep]
-            _z_old.mu = _z_old.mu[keep]
-            _z_old.P = _z_old.P[keep]
-            _z_id = _z_id[keep]
-            _lambda_c_j = _lambda_c_j[keep]
-            _z_is_at_border = _z_is_at_border[keep]
-            # Add split measurements
-            _z += s_z
-            _z_old += s_z_old
-            _z_id = np.concatenate([_z_id, np.ones(len(s_z)) * s_id])
-            _lambda_c_j = np.concatenate([_lambda_c_j, s_lambda_c_j])
-            _z_is_at_border = np.concatenate([_z_is_at_border, np.zeros(len(s_z), dtype=bool)])
-            all_z.append(_z)
-            all_z_old.append(_z_old)
-            all_z_id.append(_z_id)
-            all_lambda_c_j.append(_lambda_c_j)
-            _s_jt_num = self._create_s_jt_numerator(
-                P_B=self.P_B, P_B_border=self.P_B_border,
-                is_j_at_border=_z_is_at_border, lambda_c_j=_lambda_c_j,
-            )
-            all_s_jt_num.append(_s_jt_num)
-            all_likelihoods.append(self.split_likelihood)
-
-        all_likelihoods = np.array(all_likelihoods)
-        all_likelihoods = all_likelihoods / np.sum(all_likelihoods)
-
         ''' Create new hypotheses based on the measurements '''
-
         # Iterate over all Bernoulli mixtures
-        h_idx = []
-        hyp = self.max_sampling_hypotheses
-        for i in range(len(all_z)):
-            offset = i * len(self.mbm) * hyp
-            for x in range(len(self.mbm)):
-                h_idx.append(self.hypothesis_idx + x * hyp + offset)
-        self.hypothesis_idx += len(self.mbm) * hyp * len(all_z)
-
         args = []
         max_motion = np.mean(self.motion) if len(self.motion) > 0 else 0
         Q_mov = np.eye(2) * max_motion ** 2
-        for i,(_z, _z_old, _z_id, _lambda_c_j, _s_jt_num, _likelihood) in enumerate(zip(all_z, all_z_old, all_z_id, all_lambda_c_j, all_s_jt_num, all_likelihoods)):
-            for h in range(len(self.mbm)):
-                bm = self.mbm.bm[h]
-                debug = self.debug_mode and h == 0 and i == 0
-                args.append(dict(
-                    bm=bm, z=_z, z_old=_z_old, z_id=_z_id, s_jt_num=_s_jt_num,
-                    lambda_c_j=_lambda_c_j, P_D=P_D,
-                    gating_distance=self.gating_distance,
-                    gating_probability=self.gating_probability,
-                    max_sampling_hypotheses=self.max_sampling_hypotheses,
-                    hypothesis_idx=h_idx[h + len(self.mbm) * i], debug=debug,
-                    min_increment=self.min_increment,
-                    mitosis_min_length_a0=self.mitosis_min_length_a0,
-                    max_motion=max_motion,
-                    use_kalman_filter=self.use_kalman_filter,
-                    Q_mov=Q_mov, likelihood=_likelihood
-                ))
+
+        for h in range(len(self.mbm)):
+            bm = self.mbm.bm[h]
+            debug = self.debug_mode and h == 0 and i == 0
+            args.append(dict(
+                bm=bm, z=z, z_old=z_old, z_id=z_id, s_jt_num=s_jt_num,
+                lambda_c_j=lambda_c_j, P_D=P_D,
+                gating_distance=self.gating_distance,
+                gating_probability=self.gating_probability,
+                max_sampling_hypotheses=self.max_sampling_hypotheses,
+                hypothesis_idx=self.hypothesis_idx, debug=debug,
+                min_increment=self.min_increment,
+                mitosis_min_length_a0=self.mitosis_min_length_a0,
+                max_motion=max_motion,
+                use_kalman_filter=self.use_kalman_filter,
+                Q_mov=Q_mov,
+            ))
+            self.hypothesis_idx += self.max_sampling_hypotheses
+
         new_hypotheses = []
         association_error = []
         motion = []
@@ -487,38 +336,6 @@ class MHTTracker:
         self.association_error += association_error[0]
         motion = np.array(motion[0])  # Remove motion of rigid noisy objects
         self.motion += motion[motion > 0.001].tolist()
-
-        ''' Split potential over-segmented measurements for storage purpose '''
-        for h in new_hypotheses:
-            ids = np.unique(h.associated_id[h.associated_id >= 1000000])
-            for i in ids:
-                ind = np.where(h.associated_id == i)[0]
-                candidate_dict = z_pot_overseg[int(i) - 1000000]
-                candidates = candidate_dict["candidates"]
-                assert len(ind) == 1, "two elements with label %s" % i
-                label = h.labels[ind]
-                age = h.age[ind]
-                r = h.r[ind]
-                parent_label = h.parent_label[ind]
-                # Remove object from hypothesis
-                keep = np.ones(len(h), dtype=bool)
-                keep[ind] = False
-                h.gm.mu = h.gm.mu[keep]
-                h.gm.P = h.gm.P[keep]
-                h.associated_id = h.associated_id[keep]
-                h.labels = h.labels[keep]
-                h.age = h.age[keep]
-                h.r = h.r[keep]
-                h.parent_label = h.parent_label[keep]
-                # Add split measurements
-                inds = np.where(np.isin(z_id, candidates))[0]
-                h.gm.mu = np.concatenate([h.gm.mu, z.mu[inds]], axis=0)
-                h.gm.P = np.concatenate([h.gm.P, z.P[inds]], axis=0)
-                h.associated_id = np.concatenate([h.associated_id, z_id[inds][:, None]], axis=0)
-                h.labels = np.concatenate([h.labels, np.ones((len(inds), 1)) * label], axis=0)
-                h.age = np.concatenate([h.age, np.ones((len(inds), 1)) *age], axis=0)
-                h.r = np.concatenate([h.r, np.ones((len(inds), 1)) *r], axis=0)
-                h.parent_label = np.concatenate([h.parent_label, np.ones((len(inds), 1)) * parent_label], axis=0)
 
         ''' Add hypotheses to the new MBM '''
         self.mbm = MultiBernoulliMixture()
@@ -570,7 +387,7 @@ class MHTTracker:
             print(f"    max_motion: {max_motion}")
         # Get Normalized s_ij and s_jt
         s_ij_num = MHTTracker._create_s_ij_num(
-            bm=bm, z_old=z_old, P_D_i=P_D_i, lambda_c_j=lambda_c_j,
+            bm=bm, z_old=z_old, lambda_c_j=lambda_c_j,
             gate=gating_distance,
         )
         s_ij, s_jt = MHTTracker._normalize_s_ij_s_jt(
@@ -666,8 +483,16 @@ class MHTTracker:
         # Apply threshold or let probabilities be 1
         if min_length_a0 is not None:
             probs_a0[0:min_length_a0] = 0
-            probs_a0[0:min_length_a0] = np.arange(min_length_a0) / min_length_a0
-            probs_a0[0:min_length_a0] = np.maximum(0.05, probs_a0[0:min_length_a0])
+            ### Linear Ramp
+            # probs_a0[0:min_length_a0] = np.arange(min_length_a0) / min_length_a0
+            ### Erlang distributed
+            mu, sigma = min_length_a0, min_length_a0
+            alpha = mu ** 2 / sigma ** 2
+            beta = mu / sigma ** 2
+            erl = gamma(a=alpha, scale=1 / beta)
+            probs_a0 = erl.cdf(np.linspace(0, 5000, 5000))
+            ### Clip at 5%
+            probs_a0 = np.maximum(0.05, probs_a0)
         # Complete tracks
         pt_i[has_parent] = probs_a0[age[has_parent].astype(int).squeeze()]
         # Incomplete tracks
@@ -694,13 +519,10 @@ class MHTTracker:
     def _create_s_ij_num(
             bm: BernoulliMixture,
             z_old: Gaussians,
-            P_D_i: np.ndarray,
             lambda_c_j: np.ndarray,
             gate: float,
     ) -> (np.ndarray, np.ndarray):
         # Create probability of association between objects and measurements
-        assert len(bm) == len(P_D_i)
-        assert P_D_i.shape == (len(bm),)
         # Expand matrices for vectorized operations
         objects = bm.__copy__()
         obj_mu = np.repeat(objects.gm.mu[:, None, ], len(z_old), axis=1)
@@ -978,10 +800,8 @@ class MHTTracker:
         # Sort all objects based on their positions
         self.mbm.normalize()
         num_hypotheses_before_merging = len(self.mbm)
-        num_objects, positions, ages,  over_segmented, under_segmented, asso = \
-            list(), list(), list(), list(), list(), list()
-        sum_positions, sum_ages, sum_over_segmented, sum_under_segmented = \
-            list(), list(), list(), list()
+        num_objects, positions, ages = list(), list(), list()
+        sum_positions, sum_ages = list(), list()
         for h in self.mbm:
             num_objects.append(len(h.gm))
             _position = h.gm.mu[:, 0] * 100 + h.gm.mu[:, 1]
@@ -989,36 +809,22 @@ class MHTTracker:
             _position = _position[inds]
             _age = h.age[inds, 0]
             _label = h.labels[inds]
-            _assoc = h.associated_id[inds]
             _unique_label, _label_counts = np.unique(_label, return_counts=True)
-            _over_segmented = _unique_label[_label_counts > 1]
-            _over_segmented = np.isin(_label, _over_segmented)
-            _unique_assoc, _assoc_counts = np.unique(_assoc, return_counts=True)
-            _under_segmented = _unique_assoc[_assoc_counts > 1]
-            _under_segmented = _under_segmented[_under_segmented > 0]
-            _under_segmented = np.isin(_assoc, _under_segmented)
-            if self.mitosis_min_length_a0:
-                _age[_age > self.mitosis_min_length_a0] = self.mitosis_min_length_a0
+            # if self.mitosis_min_length_a0:
+            #     _age[_age > self.mitosis_min_length_a0] = self.mitosis_min_length_a0
             if self.mitosis_min_length_a0 is None:
                 _age *= 0
             positions.append(_position)
             ages.append(_age)
-            asso.append(_assoc)
-            under_segmented.append(_under_segmented)
-            sum_under_segmented.append(np.sum(_under_segmented))
             sum_positions.append(np.sum(_position))
             sum_ages.append(np.sum(h.age[:, 0]))
-            over_segmented.append(_over_segmented)
-            sum_over_segmented.append(np.sum(_over_segmented))
         # Find same hypothesis
         tested_hypotheses = list()
         same_hypotheses = list()
         if self.debug_mode:
             print(f"Merged Hypothesis: {same_hypotheses}" )
-        for h, (n, pos, age, assoc, over, under, s_pos, s_age, s_over, s_under) \
-                in enumerate(zip(
-            num_objects, positions, ages, asso, over_segmented, under_segmented,
-            sum_positions, sum_ages, sum_over_segmented, sum_under_segmented)
+        for h, (n, pos, age, s_pos, s_age) in enumerate(zip(
+            num_objects, positions, ages, sum_positions, sum_ages)
         ):
             if h in tested_hypotheses:
                 continue
@@ -1026,9 +832,7 @@ class MHTTracker:
             pot_hypotheses = np.argwhere(
                 (np.asarray(num_objects) == n) *
                 (np.asarray(sum_positions) == s_pos) *
-                (np.asarray(sum_ages) == s_age) *
-                (np.asarray(sum_over_segmented) == s_over) *
-                (np.asarray(sum_under_segmented) == s_under)
+                (np.asarray(sum_ages) == s_age)
             )
             pot_hypotheses = np.setdiff1d(pot_hypotheses, tested_hypotheses)
             if pot_hypotheses.size == 0:
@@ -1050,22 +854,6 @@ class MHTTracker:
                 same_hypotheses.append([h])
                 continue
             pot_hypotheses = pot_hypotheses[_same_position[:, 0]]
-            # Check if over-segmentations are the same
-            _overseg = np.stack([over_segmented[p] for p in pot_hypotheses])
-            _overseg_diff = (_overseg != over[None, :]).sum(axis=1)
-            _same_overseg = np.argwhere(_overseg_diff == 0)
-            if _same_overseg.size == 0:
-                same_hypotheses.append([h])
-                continue
-            pot_hypotheses = pot_hypotheses[_same_overseg[:, 0]]
-            # Check if associations (i.e. under-segmentations) are the same
-            _assoc = np.stack([asso[p] for p in pot_hypotheses])
-            _assoc_diff = (_assoc != assoc[None, :]).sum(axis=1)
-            _same_assoc = np.argwhere(_assoc_diff == 0)
-            if _same_assoc.size == 0:
-                same_hypotheses.append([h])
-                continue
-            pot_hypotheses = pot_hypotheses[_same_assoc[:, 0]]
             # Remove the hypothesis from the search space
             tested_hypotheses.extend(pot_hypotheses.tolist())
             same_hypotheses.append([h] + pot_hypotheses.tolist())
