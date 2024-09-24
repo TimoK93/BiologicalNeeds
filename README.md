@@ -4,7 +4,7 @@
 <h2 align="center">Strong Mitosis-aware Multi-Hypothesis Tracker with Aleatoric Uncertainty</h2>
 
 <p align="center">
-  <img alt="Teaser Image" src="./assets/teaser.png">
+  <img alt="Teaser Image" src="./assets/framework.png">
   <br>
     <em>The output distribution of EmbedTrack using different input transformations on BF-C2DL-HSC.</em>
 </p>
