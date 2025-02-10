@@ -36,28 +36,28 @@ Click on the images to watch the videos of Youtube!
 
 [![Fluo-N2DH-GOWT1 01](https://img.youtube.com/vi/iJCERA2Y-Fs/0.jpg)](https://www.youtube.com/watch?v=iJCERA2Y-Fs)
 
-[![Fluo-N2DH-GOWT1 02](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![Fluo-N2DH-GOWT1 02](https://img.youtube.com/vi/d66TBI_-bCc/0.jpg)](https://www.youtube.com/watch?v=d66TBI_-bCc)
 
 ## PhC-C2DH-U373
 
-[![PhC-C2DH-U373 01](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![PhC-C2DH-U373 01](https://img.youtube.com/vi/BvsF9Kqsu2g/0.jpg)](https://www.youtube.com/watch?v=BvsF9Kqsu2g)
 
-[![PhC-C2DH-U373 02](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![PhC-C2DH-U373 02](https://img.youtube.com/vi/5rmnxWXyxw8/0.jpg)](https://www.youtube.com/watch?v=5rmnxWXyxw8)
 
 ## Fluo-N2DL-HeLa
 
-[![Fluo-N2DL-HeLa 01](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![Fluo-N2DL-HeLa 01](https://img.youtube.com/vi/hTirrCa-nRI/0.jpg)](https://www.youtube.com/watch?v=hTirrCa-nRI)
 
-[![Fluo-N2DL-HeLa 02](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![Fluo-N2DL-HeLa 02](https://img.youtube.com/vi/xp2jebrvMPk/0.jpg)](https://www.youtube.com/watch?v=xp2jebrvMPk)
 
 ## PhC-C2DL-PSC
 
-[![PhC-C2DL-PSC 01](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![PhC-C2DL-PSC 01](https://img.youtube.com/vi/DAqvccrYPz0/0.jpg)](https://www.youtube.com/watch?v=DAqvccrYPz0)
 
-[![PhC-C2DL-PSC 02](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![PhC-C2DL-PSC 02](https://img.youtube.com/vi/Ts4fnK1AdcU/0.jpg)](https://www.youtube.com/watch?v=Ts4fnK1AdcU)
 
 ## Fluo-N2DH-SIM+
 
-[![Fluo-N2DH-SIM+ 01](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![Fluo-N2DH-SIM+ 01](https://img.youtube.com/vi/XlIBIbpNjLg/0.jpg)](https://www.youtube.com/watch?v=XlIBIbpNjLg)
 
-[![Fluo-N2DH-SIM+ 02](https://img.youtube.com/vi/ID/0.jpg)](https://www.youtube.com/watch?v=ID)
+[![Fluo-N2DH-SIM+ 02](https://img.youtube.com/vi/DMNigVG4YIU/0.jpg)](https://www.youtube.com/watch?v=DMNigVG4YIU)

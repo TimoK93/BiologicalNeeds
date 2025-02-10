@@ -38,6 +38,7 @@ for simple inference on data sets from the Cell Tracking Challenge.
 The Colab notebook includes all steps: setting up the environment, 
 retrieving the CTC data sets and inference.
 
+Video samples are available in [**VIDEO.md**](VIDEO.md).
 
 ## Dependencies 
 We have tested this implementation using `pytorch` version 1.13 and 
@@ -248,6 +249,11 @@ folder, such that no additional `--destination-root` argument is needed.
 
 [//]: # (directory.)
 
+## Downloads
+
+- Precompiled execution files (including models): [20240819_LUH-GE_ctc-submission.zip](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/20240819_LUH-GE_ctc-submission.zip)
+- Precomputed test set results: [20240819_LUH-GE_ctc-submission_data.zip](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/20240819_LUH-GE_ctc-submission_data.zip)
+- Precomputed train/val set results: [20240819_LUH-GE_ctc-submission_data_train.zip](https://www.tnt.uni-hannover.de/de/project/MPT/data/BiologicalNeeds/20240819_LUH-GE_ctc-submission_data_train.zip)
 
 ## Citation
 If you use our work in your research, please cite:
@@ -265,11 +271,4 @@ If you use our work in your research, please cite:
 Our code as well as this ReadMe is based on the repository of 
 **[Loeffler et al.](https://git.scc.kit.edu/kit-loe-ge/embedtrack)** which we would like to thank for making their code 
 publicly available.
-
-
-## Videos
-
-
-[![Fluo C2DL MSC 01](https://img.youtube.com/vi/ECDpundFIdo/0.jpg)](https://www.youtube.com/watch?v=ECDpundFIdo)
-
 
