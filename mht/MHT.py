@@ -4,6 +4,8 @@ import datetime
 import pickle
 from typing import Union
 from multiprocessing import Pool, cpu_count
+
+from numpy.lib.function_base import average
 from scipy.optimize import linear_sum_assignment
 from scipy.stats import gamma
 
@@ -130,6 +132,11 @@ class MHTTracker:
         self.top_hypothesis = list()
         self.branch_switches = list()
         self.merged_hypotheses = list()
+
+        """ RICHY Data"""  # Für jedes Frame wird jeweils eine liste mit den associations, der hypothesenwahrscheinlichkeit und die parent ID gespeichert. Alle Einträge mit der selben Parent ID sollten die selbe Shape haben
+        self.probs = list()
+        self.assignments = list()
+        self.parent_id = list()
 
     def step(
             self,
@@ -314,6 +321,11 @@ class MHTTracker:
         new_hypotheses = []
         association_error = []
         motion = []
+
+
+        probs, assignments, parent_id = [], [], []
+
+
         if self.multiprocessing:
             args = [(self._deduce_hypothesis, arg) for arg in args]
             # if len(self.branch_switches) > 1:
@@ -322,20 +334,37 @@ class MHTTracker:
             if debug:
                 print(" Max. sampled hypothesis ",
                       max([len(h) for h, _, _ in _new_hypothesis]))
-            for h, _association_error, _motion in _new_hypothesis:
+            for h, _association_error, _motion, _probs, _assignments in _new_hypothesis:
                 new_hypotheses += h
                 association_error += _association_error
                 motion += _motion
+                probs += _probs
+                assignments += _assignments
+                parent_id += [x.parent for x in h]
         else:
             for arg in args:
-                _new_hypothesis, _association_error, _motion = \
+                _new_hypothesis, _association_error, _motion, _probs, _assignments = \
                     self._deduce_hypothesis(**arg)
                 new_hypotheses += _new_hypothesis
                 association_error += _association_error
                 motion += _motion
+                probs += _probs
+                assignments += _assignments
+                parent_id += [x.parent for x in _new_hypothesis]
+
+
+        # #### For you Richy
+        self.probs += [probs]
+        self.assignments += [assignments]
+        self.parent_id += [parent_id]
+
+
         self.association_error += association_error[0]
         motion = np.array(motion[0])  # Remove motion of rigid noisy objects
         self.motion += motion[motion > 0.001].tolist()
+
+
+
 
         ''' Add hypotheses to the new MBM '''
         self.mbm = MultiBernoulliMixture()
@@ -411,6 +440,25 @@ class MHTTracker:
             max_hypotheses=max_sampling_hypotheses,
             min_increment=min_increment,
         )
+
+
+
+        ###### Code for Richy
+        probs, assignments = [], []
+        old_prob = bm.l
+        for h, l in zip(hypotheses, likelihoods):
+            a = np.zeros_like(costs)
+            a[h]= 1
+            #print("=====")
+            #print(l, a)
+            probs.append(l * np.exp(old_prob))
+            assignments.append(a)
+        #####
+
+
+
+
+
         # assert np.argsort([-l for l in likelihoods])[0] == 0, \
         #    f"The best hypothesis is not the first one {likelihoods}"
         # --> Can be caused by numerical instabilities...
@@ -445,7 +493,7 @@ class MHTTracker:
             if i == 0:
                 association_error = _association_error
                 motion = _motion
-        return new_hypotheses, association_error, motion
+        return new_hypotheses, association_error, motion, probs, assignments
 
     @staticmethod
     def _create_P_D_i(
