@@ -137,6 +137,7 @@ class MHTTracker:
         self.probs = list()
         self.assignments = list()
         self.parent_id = list()
+        self.id_matchings = list() # hier ist folgendes gespeichert: für jedes Frame eine liste von listen, in denen die Alte ID (vorheriges Bild) und gematchte ID (neues Bild) ist
 
     def step(
             self,
@@ -323,7 +324,7 @@ class MHTTracker:
         motion = []
 
 
-        probs, assignments, parent_id = [], [], []
+        probs, assignments, parent_id, id_matchings = [], [], [], []
 
 
         if self.multiprocessing:
@@ -334,16 +335,17 @@ class MHTTracker:
             if debug:
                 print(" Max. sampled hypothesis ",
                       max([len(h) for h, _, _ in _new_hypothesis]))
-            for h, _association_error, _motion, _probs, _assignments in _new_hypothesis:
+            for h, _association_error, _motion, _probs, _assignments, _ids in _new_hypothesis:
                 new_hypotheses += h
                 association_error += _association_error
                 motion += _motion
                 probs += _probs
                 assignments += _assignments
                 parent_id += [x.parent for x in h]
+                id_matchings += _ids
         else:
             for arg in args:
-                _new_hypothesis, _association_error, _motion, _probs, _assignments = \
+                _new_hypothesis, _association_error, _motion, _probs, _assignments, _ids = \
                     self._deduce_hypothesis(**arg)
                 new_hypotheses += _new_hypothesis
                 association_error += _association_error
@@ -351,12 +353,14 @@ class MHTTracker:
                 probs += _probs
                 assignments += _assignments
                 parent_id += [x.parent for x in _new_hypothesis]
+                id_matchings += _ids
 
 
         # #### For you Richy
         self.probs += [probs]
         self.assignments += [assignments]
         self.parent_id += [parent_id]
+        self.id_matchings += [id_matchings]
 
 
         self.association_error += association_error[0]
@@ -445,14 +449,29 @@ class MHTTracker:
 
         ###### Code for Richy
         probs, assignments = [], []
+        id_matchings = []
         old_prob = bm.l
+        ids_old = bm.associated_id
+        ids_new = z_id
         for h, l in zip(hypotheses, likelihoods):
             a = np.zeros_like(costs)
+
             a[h]= 1
             #print("=====")
             #print(l, a)
             probs.append(l * np.exp(old_prob))
             assignments.append(a)
+            id_matching = list()
+            for j, i in zip(h[0], h[1]):
+                j = ids_new[j]
+                if i < len(ids_old):
+                    i = ids_old[i]
+                elif i < len(ids_old) * 2:
+                    i = ids_old[i - len(ids_old)]
+                else:
+                    i = 0
+                id_matching.append((i, j))
+            id_matchings.append(id_matching)
         #####
 
 
@@ -493,7 +512,7 @@ class MHTTracker:
             if i == 0:
                 association_error = _association_error
                 motion = _motion
-        return new_hypotheses, association_error, motion, probs, assignments
+        return new_hypotheses, association_error, motion, probs, assignments, id_matchings
 
     @staticmethod
     def _create_P_D_i(
