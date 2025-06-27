@@ -1,4 +1,11 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div align="center"> 
+<a href="https://opensource.org/licenses/MIT">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="Static Badge" />
+</a>
+<a href="https://ieeexplore.ieee.org/document/11051031">
+  <img src="https://img.shields.io/badge/Paper-TMI-red?style=flat&label=Paper&link=https%3A%2F%2Fieeexplore.ieee.org%2Fdocument%2F110510319" alt="Static Badge" />
+</a>
+</div>
 
 <h1 align="center">Cell Tracking according to Biological Needs</h1>
 <h2 align="center">Strong Mitosis-aware Multi-Hypothesis Tracker with Aleatoric Uncertainty</h2>
@@ -259,11 +266,16 @@ folder, such that no additional `--destination-root` argument is needed.
 If you use our work in your research, please cite:
 
 ```bibtex
-@article{kaiser2024cell,
-  title={Cell Tracking according to Biological Needs--Strong Mitosis-aware Multi-Hypothesis Tracker with Aleatoric Uncertainty},
+@ARTICLE{11051031,
   author={Kaiser, Timo and Schier, Maximilian and Rosenhahn, Bodo},
-  journal={Hopefully will be filled with a journal later},
-  year={2025}
+  journal={IEEE Transactions on Medical Imaging}, 
+  title={Cell Tracking according to Biological Needs - Strong Mitosis-aware Multi-Hypothesis Tracker with Aleatoric Uncertainty}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={1-1},
+  keywords={Uncertainty;Measurement;Costs;Estimation;Image segmentation;Image reconstruction;Probabilistic logic;Object tracking;Training;Motion estimation;Aleatoric Uncertainty;Cell Tracking;Cell Segmentation;Multi-Hypothesis Tracking},
+  doi={10.1109/TMI.2025.3583148}}
 }
 ```
 
