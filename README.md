@@ -22,7 +22,7 @@
 
 ## Introduction
 This repository provides code for the method described in the
-**[Paper](WILLBEADDED)**
+**[Paper](https://ieeexplore.ieee.org/document/11051031)**
 **Cell Tracking according to Biological Needs - 
 Strong Mitosis-aware Multi-Hypothesis Tracker with Aleatoric Uncertainty**.
 
