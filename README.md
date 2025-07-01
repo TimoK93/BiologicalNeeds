@@ -22,7 +22,7 @@
 
 ## Introduction
 This repository provides code for the method described in the
-**[Paper](WILLBEADDED)**
+**[Paper](https://ieeexplore.ieee.org/document/11051031)**
 **Cell Tracking according to Biological Needs - 
 Strong Mitosis-aware Multi-Hypothesis Tracker with Aleatoric Uncertainty**.
 
@@ -45,7 +45,7 @@ for simple inference on data sets from the Cell Tracking Challenge.
 The Colab notebook includes all steps: setting up the environment, 
 retrieving the CTC data sets and inference.
 
-Video samples are available in [**VIDEO.md**](VIDEO.md).
+Video samples are available in [**VIDEOS.md**](VIDEOS.md).
 
 ## Dependencies 
 We have tested this implementation using `pytorch` version 1.13 and 

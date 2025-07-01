@@ -155,7 +155,7 @@ def create_mask(arg):
         slice = (associated_id // 1000000) - 1
         associated_id = associated_id % 1000000
         new[masks[slice] == associated_id] = int(label)
-    tiff.imsave(res_path, new)
+    tiff.imwrite(res_path, new)
 
 
 def find_objects(arg):

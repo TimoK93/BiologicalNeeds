@@ -1210,7 +1210,7 @@ def rename_to_ctc_format(data_dir, res_dir):
         shutil.copy(os.path.join(data_dir, file), os.path.join(res_dir, new_file_name))
         if file.endswith("tif"):
             img = tifffile.imread(os.path.join(res_dir, new_file_name))
-            tifffile.imsave(os.path.join(res_dir, new_file_name), img.astype(np.uint16))
+            tifffile.imwrite(os.path.join(res_dir, new_file_name), img.astype(np.uint16))
 
 
 def foi_correction(tracking_dir, cell_type):
@@ -1268,7 +1268,7 @@ def foi_correction(tracking_dir, cell_type):
         missing_masks = idx_segm_mask[~np.isin(idx_segm_mask, idx_segm_mask_foi)]
         for mask_id in missing_masks:
             segm_mask[segm_mask == mask_id] = 0
-        tifffile.imsave(
+        tifffile.imwrite(
             os.path.join(tracking_dir, segm_file), segm_mask.astype(np.uint16)
         )
     # remove all now missing tracks from the lineage
